@@ -44,7 +44,7 @@ const Index = () => {
            >
               <Tab.Screen name='Home' component={Home}/>
               <Tab.Screen name='Supplier' component={Supplier} options={{ tabBarStyle:{ display:'none' }}}/>
-              <Tab.Screen name='Consumer' component={Consumer}/>
+              <Tab.Screen name='Consumer' component={Consumer} options={{ tabBarStyle:{ display:'none' }}} />
               <Tab.Screen name='Settings' component={SettingsMain}/>
            </Tab.Navigator>
   )

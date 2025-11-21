@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Index from './Components/Index';
 import { NavigationContainer } from '@react-navigation/native';
 import Supplier from './Components/Main/Supplier';
+import Consumer from './Components/Main/Consumer';
 
 const Stack=createStackNavigator();
 
@@ -13,6 +14,8 @@ export default function App() {
       <Stack.Navigator screenOptions={{headerShown:false}}>
         <Stack.Screen name='Index' component={Index} />
         <Stack.Screen name='Supplier' component={Supplier} />
+        <Stack.Screen name='Consumer'
+        component={Consumer} />
       </Stack.Navigator>
     </NavigationContainer>
   );

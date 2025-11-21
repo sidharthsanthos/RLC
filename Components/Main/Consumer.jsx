@@ -1,11 +1,26 @@
 import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { createStackNavigator } from '@react-navigation/stack'
+
+const Stack = createStackNavigator();
 
 const Consumer = () => {
   return (
-    <View style={styles.container}>
-      <Text>Consumer</Text>
-    </View>
+    <Stack.Navigator 
+      screenOptions={{headerShown:false}}
+    >
+      <Stack.Screen name="ConsumerTabs">
+        {props => {
+          const ConsumerTabs = require('../Consumer/ConsumerTabs').default
+          return <ConsumerTabs {...props} />
+        }}
+      </Stack.Screen>
+      <Stack.Screen name="Index">
+        {props => {
+          const Index = require('../Index').default 
+          return <Index {...props} />
+        }}
+      </Stack.Screen>
+    </Stack.Navigator>
   )
 }
 

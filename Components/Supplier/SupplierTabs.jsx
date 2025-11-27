@@ -6,6 +6,7 @@ import AddSupplier from './AddSupplier';
 import AddOrder from './AddOrder';
 import SupplierReports from './SupplierReports';
 import { useIsFocused } from '@react-navigation/native';
+import AddPayment from './AddPayment';
 
 const Tab = createBottomTabNavigator();
 
@@ -70,6 +71,17 @@ export default function SupplierTabs() {
         component={AddOrder}
         options={{
           tabBarLabel: "Add Order",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="create-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="AddPayment"
+        component={AddPayment}
+        options={{
+          tabBarLabel: "Add Payment",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="create-outline" size={size} color={color} />
           ),

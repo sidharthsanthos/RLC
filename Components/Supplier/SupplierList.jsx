@@ -3,6 +3,7 @@ import React from 'react'
 import { createStackNavigator } from '@react-navigation/stack'
 import SMain from './SMain';
 import SupplierDetails from './SupplierDetails';
+import SOrder from './SOrder';
 
 const Stack=createStackNavigator();
 
@@ -11,6 +12,7 @@ const SupplierList = () => {
     <Stack.Navigator screenOptions={{headerShown:false}}>
       <Stack.Screen name='SupplierMain' component={SMain}/>
       <Stack.Screen name='SupplierDetails' component={SupplierDetails}/>
+      <Stack.Screen name='SupplierOrder' component={SOrder}/>
     </Stack.Navigator>
   )
 }

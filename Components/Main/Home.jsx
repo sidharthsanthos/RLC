@@ -1,7 +1,30 @@
 import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import React, { useEffect } from 'react'
+import { supabase } from '../supabaseConfig'
 
 const Home = () => {
+
+  const checksb=async ()=>{
+    try{
+      const {data,error}=await supabase
+        .from('Suppliers')
+        .select('*');
+      
+      if(error){
+        console.error('Selection Error Occured',error.message);
+        return;
+      }
+
+      console.log('data:',data);
+      
+    }catch(error){
+      console.error('Unexpected Error Occured',error);
+    }
+  }
+  useEffect(()=>{
+    checksb()
+  },[]);
+
   return (
     <View style={styles.container}>
       <Text>Home</Text>

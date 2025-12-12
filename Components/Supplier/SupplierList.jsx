@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack'
 import SMain from './SMain';
 import SupplierDetails from './SupplierDetails';
 import SOrder from './SOrder';
+import SPayment from './SPayment';
 
 const Stack=createStackNavigator();
 
@@ -13,6 +14,7 @@ const SupplierList = () => {
       <Stack.Screen name='SupplierMain' component={SMain}/>
       <Stack.Screen name='SupplierDetails' component={SupplierDetails}/>
       <Stack.Screen name='SupplierOrder' component={SOrder}/>
+      <Stack.Screen name='SupplierPayment' component={SPayment}/>
     </Stack.Navigator>
   )
 }

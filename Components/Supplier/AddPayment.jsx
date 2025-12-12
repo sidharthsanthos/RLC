@@ -27,7 +27,7 @@ const AddPayment = () => {
         'UPI',
         'Cash',
         'Bank'
-    ]
+    ];
 
     const fetchSuppliers=async ()=>{
         try{

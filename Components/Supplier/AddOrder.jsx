@@ -128,12 +128,48 @@ const AddOrder = () => {
 
     const isDefault=JSON.stringify(orderData)===JSON.stringify(initialData)
     
-    if(isDefault){
-      setAlert({type:'error',message:'Please enter all fields'});
+    // if(isDefault){
+    //   setAlert({type:'error',message:'Please enter all fields'});
+    //   setTimeout(()=>{
+    //     setAlert({type:'',message:''});
+    //     return;
+    //   },5000);
+    //   return;
+    // }
+
+    if(orderData.quality===''){
+      setAlert({type:'error',message:'Please select Quality'})
       setTimeout(()=>{
-        setAlert({type:'',message:''});
+        setAlert({type:'',message:''})
         return;
-      },5000);
+      },3000);
+      return;
+    }
+
+    if(orderData.quantity===0){
+      setAlert({type:'error',message:'Please provide quantity'})
+      setTimeout(()=>{
+        setAlert({type:'',message:''})
+        return;
+      },3000);
+      return;
+    }
+
+    if(orderData.totalBags===0){
+      setAlert({type:'error',message:'Please Provide No of Bags'})
+      setTimeout(()=>{
+        setAlert({type:'',message:''})
+        return;
+      },3000);
+      return;
+    }
+
+    if(orderData.netAmount===0){
+      setAlert({type:'error',message:'Please Provide Net Amount '})
+      setTimeout(()=>{
+        setAlert({type:'',message:''})
+        return;
+      },3000);
       return;
     }
 

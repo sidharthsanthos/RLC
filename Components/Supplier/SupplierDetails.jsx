@@ -402,7 +402,7 @@ const SupplierDetails = ({ route }) => {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
+                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={()=>navigation.navigate('SupplierPayment',{supplierID})}>
                         <Ionicons name="wallet-outline" size={20} color="#6C63FF" style={{ marginRight: 6 }} />
                         <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>Add Payment</Text>
                     </TouchableOpacity>

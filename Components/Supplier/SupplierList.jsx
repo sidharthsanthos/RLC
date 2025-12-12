@@ -5,6 +5,7 @@ import SMain from './SMain';
 import SupplierDetails from './SupplierDetails';
 import SOrder from './SOrder';
 import SPayment from './SPayment';
+import EditSupplier from './EditSupplier';
 
 const Stack=createStackNavigator();
 
@@ -15,6 +16,7 @@ const SupplierList = () => {
       <Stack.Screen name='SupplierDetails' component={SupplierDetails}/>
       <Stack.Screen name='SupplierOrder' component={SOrder}/>
       <Stack.Screen name='SupplierPayment' component={SPayment}/>
+      <Stack.Screen name='SupplierEdit' component={EditSupplier}/>
     </Stack.Navigator>
   )
 }

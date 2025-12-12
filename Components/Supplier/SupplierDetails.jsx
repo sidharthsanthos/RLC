@@ -361,7 +361,7 @@ const SupplierDetails = ({ route }) => {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    <TouchableOpacity style={styles.editButton}>
+                    <TouchableOpacity style={styles.editButton} onPress={()=>navigation.navigate('SupplierEdit',{supplierID})}>
                         <Ionicons name='create-outline' size={20} color='#fff' />
                     </TouchableOpacity>
 

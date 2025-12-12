@@ -457,9 +457,11 @@ const SupplierDetails = ({ route }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Orders</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.seeMoreText}>See All →</Text>
-                        </TouchableOpacity>
+                        {stock && stock.length>0?(
+                            <TouchableOpacity onPress={()=>navigation.navigate('OrderDetails',{supplierID})}>
+                                <Text style={styles.seeMoreText}>See All →</Text>
+                            </TouchableOpacity>):''
+                        }                            
                     </View>
 
                     {stock && stock.length > 0 ? (
@@ -518,6 +520,8 @@ const SupplierDetails = ({ route }) => {
 };
 
 export default SupplierDetails;
+
+export { OrderItem };
 
 const styles = StyleSheet.create({
     container: {

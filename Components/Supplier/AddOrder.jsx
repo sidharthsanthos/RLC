@@ -13,7 +13,8 @@ const AddOrder = () => {
     quality:'',
     netAmount:0,
     totalAmount:0,
-    totalBags:0
+    totalBags:0,
+    notes:''
   });
   const initialData={
     quantity:0,
@@ -184,7 +185,8 @@ const AddOrder = () => {
           Net_Quantity:orderData.quantity,
           Total_Bags:orderData.totalBags,
           Net_Amount:orderData.netAmount,
-          Total_Amount:orderData.totalAmount
+          Total_Amount:orderData.totalAmount,
+          Notes:orderData.notes
         }
       ])
 
@@ -329,6 +331,13 @@ const AddOrder = () => {
         placeholder="Total Amount"
         value={orderData.totalAmount.toString()}
         editable={false}
+      />
+
+      <TextInput
+          style={[styles.input, {backgroundColor:'#eee'}]}
+          placeholder='Additional Notes'
+          value={orderData.notes}
+          onChangeText={(v)=>handleInput('notes',v)}
       />
 
       <TouchableOpacity style={styles.btn} onPress={saveOrder}>

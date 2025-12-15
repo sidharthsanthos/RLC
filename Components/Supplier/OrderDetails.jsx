@@ -15,6 +15,7 @@ const OrderDetails = ({route}) => {
                .from('Stock')
                .select('*')
                .eq('Supplier_ID',supplierID)
+               .order('created_at',{ascending:false});
 
             if(error){
                 console.error('Stock Fetching Error Occured',error.message);

@@ -17,6 +17,7 @@ const EditOrder = ({route}) => {
     const [totalAmount,setTotal]=useState(0);
     const [notes,setNotes]=useState('');
     const [showdatepicker,setShowDatePicker]=useState(false);
+    const [lastEdited,setLastEdited]=useState(null);
 
     const qualitySet=[
         "Good",
@@ -39,6 +40,8 @@ const EditOrder = ({route}) => {
 
             const o=data[0];
             setOrder(o);
+            console.log(data[0]);
+            
 
             setODate(o.Date?new Date(o.Date):null);
             setQuality(o.Quality);
@@ -67,6 +70,16 @@ const EditOrder = ({route}) => {
             setTotal(0);
         }
     },[quantity,netAmount]);
+
+    useEffect(()=>{
+        if(order?.Unit_Type===1){
+            if(lastEdited==='quantity'){
+                setTotalBags(quantity);
+            }else if(lastEdited==='totalBags'){
+                setQuantity(totalBags);
+            }
+        }
+    },[quantity,totalBags]);
 
     const normalize=(v)=>
         v===null||v===undefined?"":String(v).trim();
@@ -170,7 +183,10 @@ const EditOrder = ({route}) => {
                placeholder='Quantity'
                keyboardType='numeric'
                value={quantity}
-               onChangeText={setQuantity}
+               onChangeText={(v)=>{
+                setLastEdited('quantity');
+                setQuantity(v);
+               }}
             />
 
             <TextInput
@@ -178,7 +194,10 @@ const EditOrder = ({route}) => {
                placeholder='Total Bags'
                keyboardType='numeric'
                value={totalBags}
-               onChangeText={setTotalBags}
+               onChangeText={(v)=>{
+                setLastEdited('totalBags');
+                setTotalBags(v);
+               }}
             />
 
             <TextInput
@@ -217,5 +236,24 @@ const styles = StyleSheet.create({
         display:'flex',
         paddingTop:Platform.OS==='android'?StatusBar.currentHeight:0,
         margin:0,
+    },
+    input:{
+        backgroundColor:'#fff',
+        borderWidth:1,
+        borderColor:'#ccc',
+        padding:12,
+        marginVertical:6,
+        borderRadius:6,
+    },
+    btn:{
+        backgroundColor:'#07c3f7',
+        padding:14,
+        borderRadius:8,
+        marginTop:15,
+    },
+    btnText:{
+        color:'white',
+        textAlign:'center',
+        fontWeight:'bold',
     },
 })

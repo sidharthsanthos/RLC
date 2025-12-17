@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import uuid from 'react-native-uuid';
-import { LinearGradient } from 'expo-linear-gradient'; // NEW PACKAGE
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 
 const formatDate = (isoDate) => {
@@ -113,20 +113,20 @@ const OrderItem = ({ item, index }) => {
             ]}
         >
             <View style={styles.orderIconBox}>
-                <Ionicons name="cube-outline" size={24} color="#fff" />
+                <Ionicons name="cart-outline" size={24} color="#fff" />
             </View>
 
             <View style={styles.orderContent}>
-                <Text style={styles.orderAmount}>₹{item.Total_Amount.toLocaleString()}</Text>
+                <Text style={styles.orderAmount}>₹{item.Total_Amount ? item.Total_Amount.toLocaleString() : '0'}</Text>
                 <View style={styles.orderMetaRow}>
                     <Text style={styles.orderDate}>{formatDate(item.Date)}</Text>
-                    <Text style={styles.orderQty}>• {item.Net_Quantity} Bags</Text>
+                    <Text style={styles.orderQty}>• {item.Net_Quantity} Qty</Text>
                 </View>
             </View>
 
             <View style={[styles.typeTag, { backgroundColor: typeColors[item.Stock_Type] || "#6C757D" }]}>
                 <Text style={styles.typeText}>
-                    {item.Stock_Type.replace('-', ' ').toUpperCase()}
+                    {item.Stock_Type ? item.Stock_Type.replace('-', ' ').toUpperCase() : 'ORDER'}
                 </Text>
             </View>
         </Animated.View>
@@ -145,13 +145,13 @@ const InfoRow = ({ icon, label, value }) => (
     </View>
 );
 
-const SupplierDetails = ({ route }) => {
-    const { supplierID } = route.params;
+const ConsumerDetails = ({ route }) => {
+    const { consumerID } = route.params;
 
     const navigation=useNavigation();
 
-    const [supplier, setSupplier] = useState(null);
-    const [stock, setStock] = useState(null);
+    const [consumer, setConsumer] = useState(null);
+    const [orders, setOrders] = useState(null);
     const [transactions, setTransactions] = useState(null);
     const [uploading, setUploading] = useState(false);
 
@@ -165,39 +165,42 @@ const SupplierDetails = ({ route }) => {
         }).start();
     }, []);
 
-    const fetchSupplier = async () => {
+    const fetchConsumer = async () => {
         try {
             const { data, error } = await supabase
-                .from('Suppliers')
+                .from('Consumers')
                 .select('*')
-                .eq('id', supplierID);
+                .eq('id', consumerID);
 
             if (error) {
-                console.error('Supplier Fetch Error:', error.message);
+                console.error('Consumer Fetch Error:', error.message);
                 return;
             }
 
-            setSupplier(data[0]);
+            setConsumer(data[0]);
         } catch (err) {
             console.error('Unexpected Error', err);
         }
     };
 
-    const fetchStock = async () => {
+    const fetchOrders = async () => {
         try {
+            // Assuming Sales are in 'Stock' table with Consumer_ID
+            // If there's a different table for Sales, this needs update.
             const { data, error } = await supabase
                 .from('Stock')
                 .select('*')
-                .eq('Supplier_ID', supplierID)
+                .eq('Consumer_ID', consumerID)
                 .order('created_at', { ascending: false })
                 .limit(3);
 
             if (error) {
-                console.error('Stock Fetching Error:', error.message);
+                console.log('Order Fetching info:', error.message); 
+                // It might fail if Consumer_ID doesn't exist in Stock, handle gracefully
                 return;
             }
 
-            setStock(data);
+            setOrders(data);
         } catch (err) {
             console.error('Unexpected Error:', err);
         }
@@ -208,8 +211,8 @@ const SupplierDetails = ({ route }) => {
             const { data, error } = await supabase
                 .from('Transactions')
                 .select('*')
-                .eq('ref_type', 'supplier')
-                .eq('ref_id', supplierID)
+                .eq('ref_type', 'consumer')
+                .eq('ref_id', consumerID)
                 .order('created_at', { ascending: false })
                 .limit(3);
 
@@ -225,9 +228,9 @@ const SupplierDetails = ({ route }) => {
     };
 
     useEffect(() => {
-        if (supplierID) {
-            fetchSupplier();
-            fetchStock();
+        if (consumerID) {
+            fetchConsumer();
+            fetchOrders();
             fetchTransactions();
         }
     }, []);
@@ -270,13 +273,13 @@ const SupplierDetails = ({ route }) => {
     const uploadImageAndReplaceOld = async (localUri) => {
         setUploading(true);
         try {
-            let oldUrl = supplier?.Image_URL;
+            let oldUrl = consumer?.Image_URL;
 
             if (!oldUrl) {
                 const { data: fresh, error: fetchErr } = await supabase
-                    .from('Suppliers')
+                    .from('Consumers')
                     .select('Image_URL')
-                    .eq('id', supplierID)
+                    .eq('id', consumerID)
                     .single();
 
                 if (!fetchErr) oldUrl = fresh?.Image_URL;
@@ -318,12 +321,12 @@ const SupplierDetails = ({ route }) => {
             }
 
             const { error: updateError } = await supabase
-                .from('Suppliers')
+                .from('Consumers')
                 .update({ Image_URL: newPublicUrl })
-                .eq('id', supplierID);
+                .eq('id', consumerID);
 
             if (updateError) {
-                Alert.alert('Error', 'Could not update supplier record.');
+                Alert.alert('Error', 'Could not update consumer record.');
                 setUploading(false);
                 return;
             }
@@ -337,7 +340,7 @@ const SupplierDetails = ({ route }) => {
                 }
             }
 
-            setSupplier(prev => ({ ...(prev || {}), Image_URL: newPublicUrl }));
+            setConsumer(prev => ({ ...(prev || {}), Image_URL: newPublicUrl }));
             Alert.alert('Success', 'Image updated successfully!');
         } catch (e) {
             console.error('Upload error', e);
@@ -356,7 +359,7 @@ const SupplierDetails = ({ route }) => {
             {/* Header with Gradient */}
             <Animated.View style={[styles.headerSection, { opacity: headerAnim }]}>
                 <LinearGradient
-                    colors={['#6C63FF', '#5A52D5']}
+                    colors={['#FF9966', '#FF5E62']}
                     style={styles.gradientHeader}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -368,7 +371,7 @@ const SupplierDetails = ({ route }) => {
                     <View style={styles.profileContainer}>
                         <TouchableOpacity onPress={handlePickImage} disabled={uploading} style={styles.imageWrapper}>
                             <Image
-                                source={supplier?.Image_URL ? { uri: supplier.Image_URL } : require('../../assets/user_icon.jpg')}
+                                source={consumer?.Image_URL ? { uri: consumer.Image_URL } : require('../../assets/user_icon.jpg')}
                                 style={styles.profileImage}
                             />
                             {uploading && (
@@ -382,11 +385,11 @@ const SupplierDetails = ({ route }) => {
                         </TouchableOpacity>
 
                         <Text style={styles.nameText}>
-                            {supplier?.Name || "Loading..."}
+                            {consumer?.Name || "Loading..."}
                         </Text>
 
-                        {supplier?.By_Name && (
-                            <Text style={styles.byNameText}>{supplier.By_Name}</Text>
+                        {consumer?.By_Name && (
+                            <Text style={styles.byNameText}>{consumer.By_Name}</Text>
                         )}
                     </View>
                 </LinearGradient>
@@ -395,16 +398,16 @@ const SupplierDetails = ({ route }) => {
             {/* Action Buttons */}
             <View style={styles.contentContainer}>
                 <View style={styles.buttonRow}>
-                    <TouchableOpacity style={styles.actionButton} onPress={()=>navigation.navigate('SupplierOrder',{ supplier })}>
+                    <TouchableOpacity style={styles.actionButton} onPress={()=>navigation.navigate('ConsumerOrder',{ consumer })}>
                         <Ionicons name="add-circle-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
                         <Text style={styles.actionButtonText}>
-                            Add Order
+                            Add Sale
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
-                        <Ionicons name="wallet-outline" size={20} color="#6C63FF" style={{ marginRight: 6 }} />
-                        <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>Add Payment</Text>
+                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={()=>navigation.navigate('ConsumerPayment',{ consumer })}>
+                        <Ionicons name="wallet-outline" size={20} color="#FF9966" style={{ marginRight: 6 }} />
+                        <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>Receive Payment</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -412,59 +415,50 @@ const SupplierDetails = ({ route }) => {
                 <View style={styles.pendingCard}>
                     <View style={styles.pendingHeader}>
                         <Ionicons name="time-outline" size={22} color="#FF6B6B" />
-                        <Text style={styles.pendingLabel}>Pending Amount</Text>
+                        <Text style={styles.pendingLabel}>Due Amount</Text>
                     </View>
                     <Text style={styles.pendingAmount}>
-                        ₹{supplier?.Pending_Amount?.toLocaleString() ?? 0}
+                        ₹{consumer?.Pending_Amount?.toLocaleString() ?? 0}
+                    </Text>
+                    
+                    {/* Aggregated Cost Hint */}
+                    <Text style={styles.aggregatedCostText}>
+                        * Includes aggregated costs (transport, etc.)
                     </Text>
                 </View>
 
-                {/* Supplier Details */}
+                {/* Consumer Details */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Supplier Information</Text>
+                    <Text style={styles.sectionTitle}>Consumer Information</Text>
 
                     <View style={styles.detailsCard}>
                         <InfoRow
                             icon="location-outline"
                             label="Address"
-                            value={supplier?.Address || "N/A"}
+                            value={consumer?.Address || "N/A"}
                         />
                         <View style={styles.divider} />
 
                         <InfoRow
                             icon="call-outline"
                             label="Contact"
-                            value={supplier?.Contact || "N/A"}
-                        />
-                        <View style={styles.divider} />
-
-                        <InfoRow
-                            icon="flag-outline"
-                            label="State"
-                            value={supplier?.State || "N/A"}
-                        />
-                        <View style={styles.divider} />
-
-                        <InfoRow
-                            icon="cube-outline"
-                            label="Supply Type"
-                            value={supplier?.Supply_Type === 1 ? "Sack" : "Kg"}
+                            value={consumer?.Contact || "N/A"}
                         />
                     </View>
                 </View>
 
-                {/* Last Orders */}
+                {/* Last Orders (Sales) */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Recent Orders</Text>
+                        <Text style={styles.sectionTitle}>Recent Sales</Text>
                         <TouchableOpacity>
                             <Text style={styles.seeMoreText}>See All →</Text>
                         </TouchableOpacity>
                     </View>
 
-                    {stock && stock.length > 0 ? (
+                    {orders && orders.length > 0 ? (
                         <FlatList
-                            data={stock.slice(0, 3)}
+                            data={orders}
                             keyExtractor={(item) => item.id.toString()}
                             renderItem={({ item, index }) => (
                                 <OrderItem item={item} index={index} />
@@ -474,8 +468,8 @@ const SupplierDetails = ({ route }) => {
                         />
                     ) : (
                         <View style={styles.emptyState}>
-                            <Ionicons name="cube-outline" size={48} color="#E0E0E0" />
-                            <Text style={styles.emptyText}>No orders yet</Text>
+                            <Ionicons name="cart-outline" size={48} color="#E0E0E0" />
+                            <Text style={styles.emptyText}>No sales yet</Text>
                         </View>
                     )}
                 </View>
@@ -491,7 +485,7 @@ const SupplierDetails = ({ route }) => {
 
                     {transactions && transactions.length > 0 ? (
                         <FlatList
-                            data={transactions.slice(0, 3)}
+                            data={transactions}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item, index }) => (
                                 <TransactionItem item={item} index={index} />
@@ -510,14 +504,14 @@ const SupplierDetails = ({ route }) => {
                 {/* Delete Button */}
                 <TouchableOpacity style={styles.deleteButton}>
                     <Ionicons name="trash-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
-                    <Text style={styles.deleteButtonText}>Delete Supplier</Text>
+                    <Text style={styles.deleteButtonText}>Delete Consumer</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>
     );
 };
 
-export default SupplierDetails;
+export default ConsumerDetails;
 
 const styles = StyleSheet.create({
     container: {
@@ -571,7 +565,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         right: 0,
-        backgroundColor: '#6C63FF',
+        backgroundColor: '#FF9966',
         padding: 8,
         borderRadius: 20,
         borderWidth: 3,
@@ -599,14 +593,14 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         flex: 1,
-        backgroundColor: '#6C63FF',
+        backgroundColor: '#FF9966',
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
         elevation: 3,
-        shadowColor: '#6C63FF',
+        shadowColor: '#FF9966',
         shadowOpacity: 0.3,
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 4 },
@@ -614,7 +608,7 @@ const styles = StyleSheet.create({
     secondaryButton: {
         backgroundColor: '#fff',
         borderWidth: 2,
-        borderColor: '#6C63FF',
+        borderColor: '#FF9966',
     },
     actionButtonText: {
         color: '#fff',
@@ -622,7 +616,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
     secondaryButtonText: {
-        color: '#6C63FF',
+        color: '#FF9966',
     },
     pendingCard: {
         marginTop: 20,
@@ -654,6 +648,12 @@ const styles = StyleSheet.create({
         color: "#FF6B6B",
         marginTop: 4,
     },
+    aggregatedCostText: {
+        fontSize: 11,
+        color: '#999',
+        fontStyle: 'italic',
+        marginTop: 5
+    },
     section: {
         marginTop: 24,
     },
@@ -671,7 +671,7 @@ const styles = StyleSheet.create({
     seeMoreText: {
         fontSize: 14,
         fontWeight: '600',
-        color: "#6C63FF"
+        color: "#FF9966"
     },
     detailsCard: {
         backgroundColor: '#fff',
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 10,
-        backgroundColor: '#F0EFFF',
+        backgroundColor: '#FFF0E6',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     orderIconBox: {
         width: 48,
         height: 48,
-        backgroundColor: "#6C63FF",
+        backgroundColor: "#FF9966",
         borderRadius: 12,
         justifyContent: "center",
         alignItems: "center",

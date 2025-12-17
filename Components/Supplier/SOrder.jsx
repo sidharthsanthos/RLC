@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 import MessageBox from '../MessageBox';
 
 

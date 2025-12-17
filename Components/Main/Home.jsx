@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React, { useEffect } from 'react'
-import { supabase } from '../supabaseConfig'
+import { supabase } from '../../utils/supabase';
 
 const Home = () => {
 

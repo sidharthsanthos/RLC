@@ -1,7 +1,7 @@
 import { Platform, StatusBar, StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native'
 import React, { useState } from 'react'
 import { Picker } from '@react-native-picker/picker'   // Must install this
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 import MessageBox from '../MessageBox';
 
 const AddSupplier = () => {

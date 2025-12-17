@@ -1,7 +1,7 @@
 import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 import MessageBox from '../MessageBox';
 
 const AddPayment = () => {

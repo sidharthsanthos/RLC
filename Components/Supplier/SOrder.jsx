@@ -18,11 +18,20 @@ const SOrder = () => {
         quality:'',
         netAmount:0,
         totalAmount:0,
-        totalBags:0
+        totalBags:0,
+        notes:''
     });
     const [showdatepicker,setShowDatePicker]=useState(false);
     const [oDate,setODate]=useState(new Date());
     const [alert,setAlert]=useState({type:'',message:''});
+
+    const initialData={
+        quantity:0,
+        quality:'',
+        netAmount:0,
+        totalAmount:0,
+        totalBags:0,   
+    }
 
     const qualitySet=[
         "Good",
@@ -56,7 +65,63 @@ const SOrder = () => {
 
     const saveOrder=async ()=>{
         const orderDate=oDate.toISOString().split('T')[0];
-        console.log(orderData.quantity,orderData.totalBags,orderData.quality,orderData.netAmount,orderData.totalAmount,orderDate);
+
+        if(!supplier){
+            setAlert({type:'error',message:'Supplier Not Found Retry'});
+            setTimeout(()=>{
+                setAlert({type:'',message:''});
+                return;
+            },3000);
+            return;
+        }
+
+        // const isDefault=JSON.stringify(orderData)===JSON.stringify(initialData);
+
+        // if(isDefault){
+        //     setAlert({type:'error',message:'Please enter all fields'});
+        //     setTimeout(()=>{
+        //         setAlert({type:'',message:''});
+        //         return;
+        //     },3000);
+        //     return;
+        // }
+
+        if(orderData.quality===''){
+        setAlert({type:'error',message:'Please select Quality'})
+        setTimeout(()=>{
+            setAlert({type:'',message:''})
+            return;
+        },3000);
+        return;
+        }
+
+        if(orderData.quantity===0){
+        setAlert({type:'error',message:'Please provide quantity'})
+        setTimeout(()=>{
+            setAlert({type:'',message:''})
+            return;
+        },3000);
+        return;
+        }
+
+        if(orderData.totalBags===0){
+        setAlert({type:'error',message:'Please Provide No of Bags'})
+        setTimeout(()=>{
+            setAlert({type:'',message:''})
+            return;
+        },3000);
+        return;
+        }
+
+        if(orderData.netAmount===0){
+        setAlert({type:'error',message:'Please Provide Net Amount '})
+        setTimeout(()=>{
+            setAlert({type:'',message:''})
+            return;
+        },3000);
+        return;
+        }
+
         try{
             const {error:insertError}=await supabase
                .from('Stock')
@@ -70,7 +135,8 @@ const SOrder = () => {
                     Net_Quantity:orderData.quantity,
                     Total_Bags:orderData.totalBags,
                     Net_Amount:orderData.netAmount,
-                    Total_Amount:orderData.totalAmount
+                    Total_Amount:orderData.totalAmount,
+                    Notes:orderData.notes
                 }
                ]);
 
@@ -189,6 +255,13 @@ const SOrder = () => {
                editable={false}
             />
 
+            <TextInput
+               style={[styles.input, {backgroundColor:'#eee'}]}
+               placeholder='Additional Notes'
+               value={orderData.notes}
+               onChangeText={(v)=>handleInput('notes',v)}
+            />
+
             <TouchableOpacity style={styles.btn} onPress={saveOrder}>
                 <Text style={styles.btnText}>Save Order</Text>
             </TouchableOpacity>
@@ -203,5 +276,24 @@ const styles = StyleSheet.create({
         display:'flex',
         paddingTop:Platform.OS==='android'?StatusBar.currentHeight:0,
         margin:0,
-    }
+    },
+    input:{
+        backgroundColor:'#fff',
+        borderWidth:1,
+        borderColor:'#ccc',
+        padding:12,
+        marginVertical:6,
+        borderRadius:6,
+    },
+    btn:{
+        backgroundColor:'#07c3f7',
+        padding:14,
+        borderRadius:8,
+        marginTop:15,
+    },
+    btnText:{
+        color:'white',
+        textAlign:'center',
+        fontWeight:'bold',
+    },
 })

@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, FlatList, Animated, ActivityIndicator, Alert } from 'react-native';
+import { Platform, StatusBar, StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, FlatList, Animated, ActivityIndicator, Alert, Modal } from 'react-native';
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -82,6 +82,13 @@ const OrderItem = ({ item, index }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
 
+    const [modalView,setModalView]=useState(false);
+
+    const navigation=useNavigation();
+
+
+    const itemID=item.id;
+
     useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
@@ -106,30 +113,197 @@ const OrderItem = ({ item, index }) => {
     };
 
     return (
-        <Animated.View
-            style={[
-                styles.orderCard,
-                { opacity: fadeAnim, transform: [{ translateY }] },
-            ]}
-        >
-            <View style={styles.orderIconBox}>
-                <Ionicons name="cube-outline" size={24} color="#fff" />
-            </View>
+        <>
+            <TouchableOpacity onPress={()=>setModalView(true)}>
+                <Animated.View
+                    style={[
+                        styles.orderCard,
+                        { opacity: fadeAnim, transform: [{ translateY }] },
+                    ]}
+                >
+                    <View style={styles.orderIconBox}>
+                        <Ionicons name="cube-outline" size={24} color="#fff" />
+                    </View>
 
-            <View style={styles.orderContent}>
-                <Text style={styles.orderAmount}>₹{item.Total_Amount.toLocaleString()}</Text>
-                <View style={styles.orderMetaRow}>
-                    <Text style={styles.orderDate}>{formatDate(item.Date)}</Text>
-                    <Text style={styles.orderQty}>• {item.Net_Quantity} Bags</Text>
-                </View>
-            </View>
+                    <View style={styles.orderContent}>
+                        <Text style={styles.orderAmount}>₹{item.Total_Amount.toLocaleString()}</Text>
+                        <View style={styles.orderMetaRow}>
+                            <Text style={styles.orderDate}>{formatDate(item.Date)}</Text>
+                            <Text style={styles.orderQty}>• {item.Net_Quantity} Bags</Text>
+                        </View>
+                    </View>
 
-            <View style={[styles.typeTag, { backgroundColor: typeColors[item.Stock_Type] || "#6C757D" }]}>
-                <Text style={styles.typeText}>
-                    {item.Stock_Type.replace('-', ' ').toUpperCase()}
-                </Text>
-            </View>
-        </Animated.View>
+                    <View style={[styles.typeTag, { backgroundColor: typeColors[item.Stock_Type] || "#6C757D" }]}>
+                        <Text style={styles.typeText}>
+                            {item.Stock_Type.replace('-', ' ').toUpperCase()}
+                        </Text>
+                    </View>
+                </Animated.View>
+            </TouchableOpacity>
+
+            {modalView && (
+                <Modal
+                    animationType="slide"
+                    transparent
+                    visible={modalView}
+                    onRequestClose={() => setModalView(false)}
+                >
+                    <View style={styles.modalBackground}>
+                    <View style={styles.reportContainer}>
+
+                        {/* ===== HEADER ===== */}
+                        <View style={styles.header}>
+                        <Text style={styles.title}>Order Report</Text>
+                        <Text style={styles.subTitle}>IN STOCK</Text>
+                        </View>
+
+                        {/* ===== ORDER INFO ===== */}
+                        <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Order Information</Text>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Date</Text>
+                            <Text style={styles.value}>{formatDate(item.Date)}</Text>
+                        </View>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Stock Type</Text>
+                            <Text style={styles.value}>
+                            {item.Stock_Type.replace('-', ' ').toUpperCase()}
+                            </Text>
+                        </View>
+                        </View>
+
+                        {/* ===== QUANTITY DETAILS ===== */}
+                        <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Quantity Details</Text>
+
+                        {item.Unit_Type === 1 ? (
+                            <>
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Unit Type</Text>
+                                <Text style={styles.value}>Sack / Bag Wise</Text>
+                            </View>
+
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Total Bags</Text>
+                                <Text style={styles.value}>{item.Total_Bags} Bags</Text>
+                            </View>
+
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Net Quantity</Text>
+                                <Text style={styles.value}>
+                                {item.Net_Quantity} Bags
+                                </Text>
+                            </View>
+                            </>
+                        ) : (
+                            <>
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Unit Type</Text>
+                                <Text style={styles.value}>Kilogram Wise</Text>
+                            </View>
+
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Total Bags</Text>
+                                <Text style={styles.value}>{item.Total_Bags} Bags</Text>
+                            </View>
+
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Net Quantity</Text>
+                                <Text style={styles.value}>
+                                {item.Net_Quantity} kg
+                                </Text>
+                            </View>
+                            </>
+                        )}
+                        </View>
+
+                        {/* ===== QUALITY ===== */}
+                        <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Quality Assessment</Text>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Quality</Text>
+                            <Text
+                            style={[
+                                styles.qualityBadge,
+                                item.Quality === 'Good' && styles.good,
+                                item.Quality === 'Average' && styles.average,
+                                item.Quality === 'Bad' && styles.bad,
+                            ]}
+                            >
+                            {item.Quality.toUpperCase()}
+                            </Text>
+                        </View>
+                        </View>
+
+                        {/* ===== FINANCIAL DETAILS ===== */}
+                        <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Financial Summary</Text>
+
+                        {item.Unit_Type === 1 ? (
+                            <>
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Net Quantity</Text>
+                                <Text style={styles.value}>
+                                {item.Net_Quantity} Bags
+                                </Text>
+                            </View>
+                            </>
+                        ) : (
+                            <>
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Net Quantity</Text>
+                                <Text style={styles.value}>
+                                {item.Net_Quantity} kg
+                                </Text>
+                            </View>
+                            </>
+                        )}
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Net Amount</Text>
+                            <Text style={styles.value}>₹ {item.Net_Amount.toLocaleString()}</Text>
+                        </View>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Total Amount</Text>
+                            <Text style={styles.totalValue}>
+                            ₹ {item.Total_Amount.toLocaleString()}
+                            </Text>
+                        </View>
+                        </View>
+
+                        {/* ===== NOTES ===== */}
+                        {item.Notes && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Remarks</Text>
+                            <Text style={styles.notes}>{item.Notes}</Text>
+                        </View>
+                        )}
+
+                        <TouchableOpacity
+                            style={styles.OrderEditBtn}
+                            onPress={()=>navigation.navigate('EditOrder',{itemID})}
+                        >
+                            <Text style={styles.closeText}>Edit Order</Text>
+                        </TouchableOpacity>
+
+                        {/* ===== CLOSE BUTTON ===== */}
+                        <TouchableOpacity
+                        style={styles.closeBtn}
+                        onPress={() => setModalView(false)}
+                        >
+                        <Text style={styles.closeText}>Close Report</Text>
+                        </TouchableOpacity>
+
+                    </View>
+                    </View>
+                </Modal>
+                )}
+        </>
+        
     );
 };
 
@@ -361,7 +535,7 @@ const SupplierDetails = ({ route }) => {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    <TouchableOpacity style={styles.editButton}>
+                    <TouchableOpacity style={styles.editButton} onPress={()=>navigation.navigate('SupplierEdit',{supplierID})}>
                         <Ionicons name='create-outline' size={20} color='#fff' />
                     </TouchableOpacity>
 
@@ -402,7 +576,7 @@ const SupplierDetails = ({ route }) => {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
+                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={()=>navigation.navigate('SupplierPayment',{supplierID})}>
                         <Ionicons name="wallet-outline" size={20} color="#6C63FF" style={{ marginRight: 6 }} />
                         <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>Add Payment</Text>
                     </TouchableOpacity>
@@ -457,9 +631,11 @@ const SupplierDetails = ({ route }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Orders</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.seeMoreText}>See All →</Text>
-                        </TouchableOpacity>
+                        {stock && stock.length>0?(
+                            <TouchableOpacity onPress={()=>navigation.navigate('OrderDetails',{supplierID})}>
+                                <Text style={styles.seeMoreText}>See All →</Text>
+                            </TouchableOpacity>):''
+                        }                            
                     </View>
 
                     {stock && stock.length > 0 ? (
@@ -518,6 +694,8 @@ const SupplierDetails = ({ route }) => {
 };
 
 export default SupplierDetails;
+
+export { OrderItem };
 
 const styles = StyleSheet.create({
     container: {
@@ -850,5 +1028,126 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: '600',
         fontSize: 15,
+    },
+    modalBackground: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dimmed background
+    },
+    modalContainer: {
+        width: '80%',
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    closeButton: {
+        color: '#007BFF',
+        marginTop: 20,
+        fontSize: 16,
+    },
+    modalBackground: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        justifyContent: 'center',
+        padding: 16,
+    },
+    reportContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        elevation: 6,
+    },
+    header: {
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingBottom: 10,
+        marginBottom: 10,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#222',
+    },
+    subTitle: {
+        fontSize: 13,
+        color: '#2e7d32',
+        fontWeight: '600',
+        marginTop: 4,
+    },
+    section: {
+        marginTop: 12,
+    },
+    sectionTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#555',
+        marginBottom: 6,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginVertical: 4,
+    },
+    label: {
+        fontSize: 13,
+        color: '#777',
+    },
+    value: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#222',
+    },
+    totalValue: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#000',
+    },
+    qualityBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: 6,
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    good: {
+        backgroundColor: '#2e7d32',
+    },
+    average: {
+        backgroundColor: '#f9a825',
+    },
+    bad: {
+        backgroundColor: '#c62828',
+    },
+    notes: {
+        fontSize: 13,
+        color: '#444',
+        marginTop: 4,
+    },
+    closeBtn: {
+        marginTop: 16,
+        backgroundColor: '#000',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    OrderEditBtn:{
+        marginTop:16,
+        backgroundColor:'#ba0b1a',
+        paddingVertical:10,
+        borderRadius:8,
+        alignItems:'center'
+    },
+    closeText: {
+        color: '#fff',
+        fontWeight: '600',
     },
 });

@@ -13,7 +13,8 @@ const AddOrder = () => {
     quality:'',
     netAmount:0,
     totalAmount:0,
-    totalBags:0
+    totalBags:0,
+    notes:''
   });
   const initialData={
     quantity:0,
@@ -128,12 +129,48 @@ const AddOrder = () => {
 
     const isDefault=JSON.stringify(orderData)===JSON.stringify(initialData)
     
-    if(isDefault){
-      setAlert({type:'error',message:'Please enter all fields'});
+    // if(isDefault){
+    //   setAlert({type:'error',message:'Please enter all fields'});
+    //   setTimeout(()=>{
+    //     setAlert({type:'',message:''});
+    //     return;
+    //   },5000);
+    //   return;
+    // }
+
+    if(orderData.quality===''){
+      setAlert({type:'error',message:'Please select Quality'})
       setTimeout(()=>{
-        setAlert({type:'',message:''});
+        setAlert({type:'',message:''})
         return;
-      },5000);
+      },3000);
+      return;
+    }
+
+    if(orderData.quantity===0){
+      setAlert({type:'error',message:'Please provide quantity'})
+      setTimeout(()=>{
+        setAlert({type:'',message:''})
+        return;
+      },3000);
+      return;
+    }
+
+    if(orderData.totalBags===0){
+      setAlert({type:'error',message:'Please Provide No of Bags'})
+      setTimeout(()=>{
+        setAlert({type:'',message:''})
+        return;
+      },3000);
+      return;
+    }
+
+    if(orderData.netAmount===0){
+      setAlert({type:'error',message:'Please Provide Net Amount '})
+      setTimeout(()=>{
+        setAlert({type:'',message:''})
+        return;
+      },3000);
       return;
     }
 
@@ -148,7 +185,8 @@ const AddOrder = () => {
           Net_Quantity:orderData.quantity,
           Total_Bags:orderData.totalBags,
           Net_Amount:orderData.netAmount,
-          Total_Amount:orderData.totalAmount
+          Total_Amount:orderData.totalAmount,
+          Notes:orderData.notes
         }
       ])
 
@@ -293,6 +331,13 @@ const AddOrder = () => {
         placeholder="Total Amount"
         value={orderData.totalAmount.toString()}
         editable={false}
+      />
+
+      <TextInput
+          style={[styles.input, {backgroundColor:'#eee'}]}
+          placeholder='Additional Notes'
+          value={orderData.notes}
+          onChangeText={(v)=>handleInput('notes',v)}
       />
 
       <TouchableOpacity style={styles.btn} onPress={saveOrder}>

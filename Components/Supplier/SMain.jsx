@@ -1,8 +1,9 @@
-import { FlatList, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { FlatList, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../supabaseConfig';
 import { useNavigation } from '@react-navigation/native';
+import KPI from '../Dashboard/KPI';
 
 
 const SMain = () => {
@@ -94,11 +95,9 @@ const SMain = () => {
 
                 </View>
             ):(
-                <View>
-                    <Text>
-                        Main Area for Displaying Supplier Details
-                    </Text>
-                </View>
+                <ScrollView>
+                    <KPI/>
+                </ScrollView>
             )}
 
         </View>

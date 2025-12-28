@@ -4,7 +4,7 @@ import { supabase } from '../supabaseConfig';
 import KPICard from './KPICard';
 import { useNavigation } from '@react-navigation/native';
 
-const KPI = () => {
+const KPI = ({refreshKey}) => {
 
     const [kpi,setKpi]=useState(null);
     const [loading,setLoading]=useState(false);
@@ -30,7 +30,7 @@ const KPI = () => {
 
     useEffect(()=>{
         fetchKPI();
-    },[]);
+    },[refreshKey]);
 
     if(loading){
         return <Text style={{padding:16}}>Loading KPIs....</Text>;
@@ -43,21 +43,25 @@ const KPI = () => {
             title:'Total Pending',
             value:`₹${kpi.total_pending_amount}`,
             route:'PendingSuppliers',
+            color:'#FF9800',
         },
         {
-            title:'Payments This Month',
+            title:'Payments (Month)',
             value:`₹${kpi.payments_this_month}`,
             route:'PaymentsThisMonth',
+            color:'#4CAF50',
         },
         {
             title:'Total Suppliers',
             value:kpi.total_suppliers,
             route:'TotalSuppliers',
+            color:'#2563EB',
         },
         {
             title:'Stock Value',
             value:`₹${kpi.total_stock_values}`,
-            route:'PendingSuppliers',
+            route:'StockValue',
+            color:'#DC2626',
         },
     ];
 
@@ -69,7 +73,7 @@ const KPI = () => {
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(item)=>item.title}
                 renderItem={({item})=>(
-                    <KPICard title={item.title} value={item.value} onPress={()=>navigation.navigate(item.route)}/>
+                    <KPICard title={item.title} value={item.value} onPress={()=>navigation.navigate(item.route)} color={item.color}/>
                 )}
             />
         </View>

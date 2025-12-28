@@ -55,7 +55,7 @@ export default function SupplierTabs() {
         }}
       />
 
-      <Tab.Screen
+      {/* <Tab.Screen
         name="AddSupplier"
         component={AddSupplier}
         options={{
@@ -64,7 +64,7 @@ export default function SupplierTabs() {
             <Ionicons name="person-add-outline" size={size} color={color} />
           ),
         }}
-      />
+      /> */}
 
       <Tab.Screen
         name="AddOrder"

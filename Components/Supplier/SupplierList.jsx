@@ -13,6 +13,8 @@ import EditPayment from './EditPayment';
 import PendingList from '../Dashboard/PendingList';
 import PTM from '../Dashboard/PTM';
 import TotalSuppliers from '../Dashboard/TotalSuppliers';
+import StockValue from '../Dashboard/StockValue';
+import AddSupplier from './AddSupplier';
 
 const Stack=createStackNavigator();
 
@@ -31,6 +33,8 @@ const SupplierList = () => {
       <Stack.Screen name='PendingSuppliers' component={PendingList}/>
       <Stack.Screen name='PaymentsThisMonth' component={PTM}/>
       <Stack.Screen name='TotalSuppliers' component={TotalSuppliers}/>
+      <Stack.Screen name='StockValue' component={StockValue}/>
+      <Stack.Screen name='AddSupplier' component={AddSupplier}/>
     </Stack.Navigator>
   )
 }

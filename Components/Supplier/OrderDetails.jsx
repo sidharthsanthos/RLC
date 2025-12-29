@@ -1,7 +1,6 @@
 import { FlatList, Platform, StatusBar, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../supabaseConfig';
-import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../../utils/supabase';import { Ionicons } from '@expo/vector-icons';
 import { OrderItem } from './SupplierDetails';
 
 const OrderDetails = ({route}) => {

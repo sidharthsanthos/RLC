@@ -39,8 +39,7 @@ const AddOrder = () => {
         },3000);
       }
 
-      setSuppliers(data);
-      console.log(data);
+      setSuppliers(data)
       
     }catch(err){
       setAlert({type:'error',message:err})
@@ -105,18 +104,6 @@ const AddOrder = () => {
 
   const saveOrder=async ()=>{
     const today=new Date().toISOString().split("T")[0];
-
-    console.log({
-      'supplierID':selectedSupplier?.id,
-      'stockType':'in-stock',
-      'quality':orderData.quality,
-      'unitType':selectedSupplier?.Supply_Type,
-      'NetQuantity':orderData.quantity,
-      'TotalBags':orderData.totalBags,
-      'netAmount':orderData.netAmount,
-      'totalAmount':orderData.totalAmount,
-      'date':today
-    });
 
     if(!selectedSupplier){
       setAlert({type:'error',message:'Select a supplier first'})

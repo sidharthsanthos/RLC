@@ -1,7 +1,7 @@
 import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { StatusBar } from 'react-native';
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 

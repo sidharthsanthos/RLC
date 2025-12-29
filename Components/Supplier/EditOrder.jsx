@@ -18,6 +18,8 @@ const EditOrder = ({route}) => {
     const [notes,setNotes]=useState('');
     const [showdatepicker,setShowDatePicker]=useState(false);
     const [lastEdited,setLastEdited]=useState(null);
+    const [supplierID, setSupplierID] = useState('');
+    const [pending, setPending] = useState(0);
 
     const qualitySet=[
         "Good",
@@ -42,7 +44,9 @@ const EditOrder = ({route}) => {
             setOrder(o);
             console.log(data[0]);
             
-
+            setSupplierID(o.Supplier_ID);
+            console.log('data',o);
+            
             setODate(o.Date?new Date(o.Date):null);
             setQuality(o.Quality);
             setQuantity(String(o.Net_Quantity));
@@ -56,9 +60,36 @@ const EditOrder = ({route}) => {
         }
     }
 
+    const fetchPending = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('Suppliers')
+                .select('Pending_Amount')
+                .eq('id', supplierID);
+
+            if (error) {
+                console.error('Fetching Error Occured', error.message);
+                return;
+            }
+
+            const pending = data[0].Pending_Amount
+            setPending(pending);
+        } catch (err) {
+            console.error('Unexpected Error Occured', err);
+        }
+    }
+
     useEffect(()=>{
         fetchOrder();
     },[]);
+
+    useEffect(() => {
+        if (supplierID) {
+            console.log('supplierID',supplierID);
+            
+            fetchPending();
+        }
+    }, [supplierID]);
 
     useEffect(()=>{
         const q=parseInt(quantity);
@@ -124,20 +155,38 @@ const EditOrder = ({route}) => {
             return;
         }
 
-        try{
-            const {error}=await supabase
-               .from('Stock')
-               .update(updateFields)
-               .eq('id',itemID)
+        try {
+            const { error } = await supabase
+                .from('Stock')
+                .update(updateFields)
+                .eq('id', itemID)
 
-            if(error){
-                alert('Update Failed'+error.message);
+            if (error) {
+                alert('Update Failed' + error.message);
                 return;
-            }else{
-                alert('Order Updated Successfully');
             }
-        }catch(err){
-            alert('Unexpected Error Occured '+err)
+
+            if (updateFields.Total_Amount) {
+                const amountDifference = Number(totalAmount) - Number(order.Total_Amount);
+                const newPending = pending + amountDifference;
+
+                const { error: supplierError } = await supabase
+                    .from('Suppliers')
+                    .update({ Pending_Amount: newPending })
+                    .eq('id', supplierID);
+
+                if (supplierError) {
+                    alert('Failed to update pending amount: ' + supplierError.message);
+                    // Optionally, you might want to revert the order update here
+                    // or handle this scenario in another way.
+                    return;
+                }
+            }
+
+            alert('Order Updated Successfully');
+
+        } catch (err) {
+            alert('Unexpected Error Occured ' + err)
         }
     }
 

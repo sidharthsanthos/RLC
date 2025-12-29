@@ -21,6 +21,11 @@ const TransactionItem = ({ item, index }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
 
+    const [modalView,setModalView]=useState(false);
+    const navigation=useNavigation();
+    const itemID=item.id;
+
+
     useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
@@ -54,27 +59,100 @@ const TransactionItem = ({ item, index }) => {
     };
 
     return (
-        <Animated.View
-            style={[
-                styles.txCard,
-                { opacity: fadeAnim, transform: [{ translateY }] }
-            ]}
-        >
-            <View style={[styles.txIconBox, { backgroundColor: modeColors[item.mode] || "#95A5A6" }]}>
-                <Ionicons name={modeIcons[item.mode] || "help-circle-outline"} size={24} color="#fff" />
-            </View>
+        <>
+            <TouchableOpacity onPress={()=>setModalView(true)}>
+                <Animated.View
+                    style={[
+                        styles.txCard,
+                        { opacity: fadeAnim, transform: [{ translateY }] }
+                    ]}
+                >
+                    <View style={[styles.txIconBox, { backgroundColor: modeColors[item.mode] || "#95A5A6" }]}>
+                        <Ionicons name={modeIcons[item.mode] || "help-circle-outline"} size={24} color="#fff" />
+                    </View>
 
-            <View style={styles.txContent}>
-                <Text style={styles.txAmount}>₹{item.amount.toLocaleString()}</Text>
-                <Text style={styles.txDate}>{formatDate(item.date)}</Text>
-            </View>
+                    <View style={styles.txContent}>
+                        <Text style={styles.txAmount}>₹{item.amount.toLocaleString()}</Text>
+                        <Text style={styles.txDate}>{formatDate(item.date)}</Text>
+                    </View>
 
-            <View style={[styles.modeTag, { backgroundColor: modeColors[item.mode] || "#95A5A6" }]}>
-                <Text style={styles.modeText}>
-                    {item.mode ? item.mode.toUpperCase() : "N/A"}
-                </Text>
-            </View>
-        </Animated.View>
+                    <View style={[styles.modeTag, { backgroundColor: modeColors[item.mode] || "#95A5A6" }]}>
+                        <Text style={styles.modeText}>
+                            {item.mode ? item.mode.toUpperCase() : "N/A"}
+                        </Text>
+                    </View>
+                </Animated.View>
+            </TouchableOpacity>
+
+            {modalView && (
+                <Modal
+                    animationType="fade"
+                    transparent
+                    visible={modalView}
+                    onRequestClose={() => setModalView(false)}
+                >
+                    <View style={styles.modalBackground}>
+
+                    {/* Push report slightly upward to feel "highlighted" */}
+                    <View style={styles.transactionContainer}>
+
+                        {/* ===== HEADER ===== */}
+                        <View style={styles.transactionHeader}>
+                        <Text style={styles.transactionTitle}>Payment Report</Text>
+                        <Text style={styles.transactionStatus}>COMPLETED</Text>
+                        </View>
+
+                        {/* ===== TRANSACTION DETAILS ===== */}
+                        <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Transaction Details</Text>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Date</Text>
+                            <Text style={styles.value}>{formatDate(item.date)}</Text>
+                        </View>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Payment Mode</Text>
+                            <Text style={styles.value}>{item.mode.toUpperCase()}</Text>
+                        </View>
+                        </View>
+
+                        {/* ===== AMOUNT HIGHLIGHT ===== */}
+                        <View style={styles.amountCard}>
+                        <Text style={styles.amountLabel}>Paid Amount</Text>
+                        <Text style={styles.amountValue}>
+                            ₹ {item.amount.toLocaleString()}
+                        </Text>
+                        </View>
+
+                        {/* ===== REMARKS ===== */}
+                        {item.remarks && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Remarks</Text>
+                            <Text style={styles.notes}>{item.remarks}</Text>
+                        </View>
+                        )}
+
+                        <TouchableOpacity
+                            style={styles.OrderEditBtn}
+                            onPress={()=>navigation.navigate('EditPayment',{itemID})}
+                        >
+                            <Text style={styles.closeText}>Edit Order</Text>
+                        </TouchableOpacity>
+
+                        {/* ===== CLOSE BUTTON ===== */}
+                        <TouchableOpacity
+                        style={styles.closeBtn}
+                        onPress={() => setModalView(false)}
+                        >
+                        <Text style={styles.closeText}>Close</Text>
+                        </TouchableOpacity>
+
+                    </View>
+                    </View>
+                </Modal>
+                )}
+        </>
     );
 };
 
@@ -660,7 +738,7 @@ const SupplierDetails = ({ route }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Transactions</Text>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={()=>navigation.navigate('PaymentDetails',{supplierID})}>
                             <Text style={styles.seeMoreText}>See All →</Text>
                         </TouchableOpacity>
                     </View>
@@ -696,6 +774,8 @@ const SupplierDetails = ({ route }) => {
 export default SupplierDetails;
 
 export { OrderItem };
+
+export { TransactionItem };
 
 const styles = StyleSheet.create({
     container: {
@@ -1149,5 +1229,47 @@ const styles = StyleSheet.create({
     closeText: {
         color: '#fff',
         fontWeight: '600',
+    },
+    transactionContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        marginTop: 60, // pushes it visually to the top
+        elevation: 8,
+    },
+    transactionHeader: {
+        alignItems: 'center',
+        marginBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingBottom: 8,
+    },
+    transactionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#222',
+    },
+    transactionStatus: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#2e7d32',
+        marginTop: 2,
+    },
+    amountCard: {
+        backgroundColor: '#f4f6f8',
+        borderRadius: 10,
+        paddingVertical: 14,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    amountLabel: {
+        fontSize: 13,
+        color: '#666',
+    },
+    amountValue: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#000',
+        marginTop: 4,
     },
 });

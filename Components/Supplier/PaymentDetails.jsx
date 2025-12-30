@@ -1,6 +1,6 @@
 import { FlatList, Platform, StatusBar, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 import { TransactionItem } from './SupplierDetails';
 import { Ionicons } from '@expo/vector-icons';
 

@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, FlatList, Animated, ActivityIndicator, Alert } from 'react-native';
+import { Platform, StatusBar, StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, FlatList, Animated, ActivityIndicator, Alert, Modal } from 'react-native';
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -82,6 +82,10 @@ const OrderItem = ({ item, index }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
 
+    const [modalView,setModalView]=useState(false);
+    const navigation=useNavigation();
+    const itemID=item.id;
+
     useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
@@ -101,42 +105,112 @@ const OrderItem = ({ item, index }) => {
     }, []);
 
     const typeColors = {
-        "in-stock": "#51CF66",
-        "out-stock": "#FF6B6B",
+        "debit": "#FF6B6B",
+        "credit": "#51CF66",
     };
 
     return (
-        <Animated.View
-            style={[
-                styles.orderCard,
-                { opacity: fadeAnim, transform: [{ translateY }] },
-            ]}
-        >
-            <View style={styles.orderIconBox}>
-                <Ionicons name="cart-outline" size={24} color="#fff" />
-            </View>
+        <>
+            <TouchableOpacity onPress={()=>setModalView(true)}>
+                <Animated.View
+                    style={[
+                        styles.orderCard,
+                        { opacity: fadeAnim, transform: [{ translateY }] },
+                    ]}
+                >
+                    <View style={styles.orderIconBox}>
+                        <Ionicons name="cart-outline" size={24} color="#fff" />
+                    </View>
 
-            <View style={styles.orderContent}>
-                <Text style={styles.orderAmount}>₹{item.Total_Amount ? item.Total_Amount.toLocaleString() : '0'}</Text>
-                <View style={styles.orderMetaRow}>
-                    <Text style={styles.orderDate}>{formatDate(item.Date)}</Text>
-                    <Text style={styles.orderQty}>• {item.Net_Quantity} Qty</Text>
-                </View>
-            </View>
+                    <View style={styles.orderContent}>
+                        <Text style={styles.orderAmount}>₹{item.amount ? item.amount.toLocaleString() : '0'}</Text>
+                        <View style={styles.orderMetaRow}>
+                            <Text style={styles.orderDate}>{formatDate(item.date)}</Text>
+                            {item.remarks && <Text style={styles.orderQty}>• {item.remarks.substring(0, 20)}...</Text>}
+                        </View>
+                    </View>
 
-            <View style={[styles.typeTag, { backgroundColor: typeColors[item.Stock_Type] || "#6C757D" }]}>
-                <Text style={styles.typeText}>
-                    {item.Stock_Type ? item.Stock_Type.replace('-', ' ').toUpperCase() : 'ORDER'}
-                </Text>
-            </View>
-        </Animated.View>
+                    <View style={[styles.typeTag, { backgroundColor: typeColors[item.transaction_type] || "#FF9966" }]}>
+                        <Text style={styles.typeText}>
+                            ORDER
+                        </Text>
+                    </View>
+                </Animated.View>
+            </TouchableOpacity>
+
+            {modalView && (
+                <Modal
+                    animationType="slide"
+                    transparent
+                    visible={modalView}
+                    onRequestClose={() => setModalView(false)}
+                >
+                    <View style={styles.modalBackground}>
+                    <View style={styles.reportContainer}>
+
+                        {/* ===== HEADER ===== */}
+                        <View style={styles.header}>
+                        <Text style={styles.title}>Sale Report</Text>
+                        <Text style={styles.subTitle}>DETAILS</Text>
+                        </View>
+
+                        {/* ===== ORDER INFO ===== */}
+                        <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Sale Information</Text>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Date</Text>
+                            <Text style={styles.value}>{formatDate(item.date)}</Text>
+                        </View>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Transaction Type</Text>
+                            <Text style={styles.value}>
+                            {item.transaction_type ? item.transaction_type.toUpperCase() : 'DEBIT'}
+                            </Text>
+                        </View>
+                        </View>
+
+                        {/* ===== FINANCIAL DETAILS ===== */}
+                        <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Financial Summary</Text>
+
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Total Amount</Text>
+                            <Text style={styles.totalValue}>
+                            ₹ {item.amount ? item.amount.toLocaleString() : '0'}
+                            </Text>
+                        </View>
+                        </View>
+
+                        {/* ===== NOTES ===== */}
+                        {item.remarks && (
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Remarks</Text>
+                            <Text style={styles.notes}>{item.remarks}</Text>
+                        </View>
+                        )}
+
+                        {/* ===== CLOSE BUTTON ===== */}
+                        <TouchableOpacity
+                        style={styles.closeBtn}
+                        onPress={() => setModalView(false)}
+                        >
+                        <Text style={styles.closeText}>Close Report</Text>
+                        </TouchableOpacity>
+
+                    </View>
+                    </View>
+                </Modal>
+            )}
+        </>
     );
 };
 
 const InfoRow = ({ icon, label, value }) => (
     <View style={styles.infoRow}>
         <View style={styles.infoIconWrapper}>
-            <Ionicons name={icon} size={18} color="#6C63FF" />
+            <Ionicons name={icon} size={18} color="#FF9966" />
         </View>
         <View style={styles.infoContent}>
             <Text style={styles.infoLabel}>{label}</Text>
@@ -185,18 +259,18 @@ const ConsumerDetails = ({ route }) => {
 
     const fetchOrders = async () => {
         try {
-            // Assuming Sales are in 'Stock' table with Consumer_ID
-            // If there's a different table for Sales, this needs update.
+            // Fetch consumer's transactions (orders are debits)
             const { data, error } = await supabase
-                .from('Stock')
+                .from('Transactions')
                 .select('*')
-                .eq('Consumer_ID', consumerID)
+                .eq('ref_type', 'consumer')
+                .eq('ref_id', consumerID)
+                .eq('transaction_type', 'debit')
                 .order('created_at', { ascending: false })
                 .limit(3);
 
             if (error) {
                 console.log('Order Fetching info:', error.message); 
-                // It might fail if Consumer_ID doesn't exist in Stock, handle gracefully
                 return;
             }
 
@@ -208,11 +282,13 @@ const ConsumerDetails = ({ route }) => {
 
     const fetchTransactions = async () => {
         try {
+            // Fetch consumer's payments (credits)
             const { data, error } = await supabase
                 .from('Transactions')
                 .select('*')
                 .eq('ref_type', 'consumer')
                 .eq('ref_id', consumerID)
+                .eq('transaction_type', 'credit')
                 .order('created_at', { ascending: false })
                 .limit(3);
 
@@ -364,7 +440,7 @@ const ConsumerDetails = ({ route }) => {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    <TouchableOpacity style={styles.editButton}>
+                    <TouchableOpacity style={styles.editButton} onPress={()=>navigation.navigate('EditConsumer',{consumerID})}>
                         <Ionicons name='create-outline' size={20} color='#fff' />
                     </TouchableOpacity>
 
@@ -451,9 +527,11 @@ const ConsumerDetails = ({ route }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Sales</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.seeMoreText}>See All →</Text>
-                        </TouchableOpacity>
+                        {orders && orders.length>0?(
+                            <TouchableOpacity onPress={()=>navigation.navigate('OrderDetails',{consumerID})}>
+                                <Text style={styles.seeMoreText}>See All →</Text>
+                            </TouchableOpacity>):''
+                        }
                     </View>
 
                     {orders && orders.length > 0 ? (
@@ -512,6 +590,7 @@ const ConsumerDetails = ({ route }) => {
 };
 
 export default ConsumerDetails;
+export { OrderItem };
 
 const styles = StyleSheet.create({
     container: {
@@ -850,5 +929,103 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: '600',
         fontSize: 15,
+    },
+    modalBackground: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        justifyContent: 'center',
+        padding: 16,
+    },
+    reportContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        elevation: 6,
+    },
+    header: {
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingBottom: 10,
+        marginBottom: 10,
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#222',
+    },
+    subTitle: {
+        fontSize: 13,
+        color: '#FF9966',
+        fontWeight: '600',
+        marginTop: 4,
+    },
+    section: {
+        marginTop: 12,
+    },
+    sectionTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#555',
+        marginBottom: 6,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginVertical: 4,
+    },
+    label: {
+        fontSize: 13,
+        color: '#777',
+    },
+    value: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#222',
+    },
+    totalValue: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#000',
+    },
+    qualityBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: 6,
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    good: {
+        backgroundColor: '#2e7d32',
+    },
+    average: {
+        backgroundColor: '#f9a825',
+    },
+    bad: {
+        backgroundColor: '#c62828',
+    },
+    notes: {
+        fontSize: 13,
+        color: '#444',
+        marginTop: 4,
+    },
+    closeBtn: {
+        marginTop: 16,
+        backgroundColor: '#000',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    OrderEditBtn:{
+        marginTop:16,
+        backgroundColor:'#ba0b1a',
+        paddingVertical:10,
+        borderRadius:8,
+        alignItems:'center'
+    },
+    closeText: {
+        color: '#fff',
+        fontWeight: '600',
     },
 });

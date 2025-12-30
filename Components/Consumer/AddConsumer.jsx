@@ -13,7 +13,9 @@ const AddConsumer = () => {
 
   const saveConsumer=async ()=>{
     
-    if(name===''){
+    const len=contact.length;
+
+    if(name==='' || contact===''){
       setAlert({type:'error', message:'Fill Essential Fields'});
       setTimeout(()=>{
         setAlert({type:'',message:''});
@@ -22,19 +24,24 @@ const AddConsumer = () => {
       return;
     }
 
-    try{
-      const payload = {
-          Name: name,
-          By_Name: byname,
-      };
-      
-      // Conditionally add other fields if they are filled (assuming schema supports them, if not they might be ignored or cause error depending on strictness, but we start with what we know)
-      if (contact) payload.Contact = contact;
-      if (address) payload.Address = address;
+    if(len!==10){
+      setAlert({type:'error',message:'Phone Number Not Valid'});
+      setTimeout(()=>{
+        setAlert({type:'',message:''});
+        return;
+      },3000);
+      return;
+    }
 
+    try{
       const {error}=await supabase
         .from("Consumers")
-        .insert(payload)
+        .insert({
+          Name:name,
+          By_Name:byname,
+          Contact:contact,
+          Address:address
+        })
 
       if(error){
         setAlert({type:'error',message:error.message});
@@ -45,19 +52,19 @@ const AddConsumer = () => {
         return;
       }
 
+      // console.log("Data Insertion Successfully");
       setAlert({type:'success',message:'Consumer Added Successfully'});
       setTimeout(()=>{
         setAlert({type:'',message:''});
         return;
-      },5000);
-      
+      },10000);
       setName('');
-      setByName('');
-      setContact('');
-      setAddress('');
+      setByName('')
+      setContact('')
+      setAddress('')
       
     }catch(err){
-      console.error('Unexpected Error Occurred',err);
+      console.error('Unexpected Error Occured',err);
     }
   } 
 
@@ -79,16 +86,16 @@ const AddConsumer = () => {
       />
 
       {/* By Name */}
-      <Text style={styles.label}>By Name / Alias</Text>
+      <Text style={styles.label}>Consumer ByName</Text>
       <TextInput
         style={styles.input}
-        placeholder="By Name"
+        placeholder="By Name / Shop Name"
         value={byname}
         onChangeText={setByName}
       />
 
       {/* Contact */}
-      <Text style={styles.label}>Contact Number</Text>
+      <Text style={styles.label}>Consumer Contact</Text>
       <TextInput
         style={styles.input}
         placeholder="Contact Number"
@@ -98,7 +105,7 @@ const AddConsumer = () => {
       />
 
       {/* Address */}
-      <Text style={styles.label}>Address</Text>
+      <Text style={styles.label}>Consumer Address</Text>
       <TextInput
         style={[styles.input, { height: 80 }]}
         placeholder="Address"

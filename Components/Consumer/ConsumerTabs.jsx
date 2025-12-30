@@ -4,7 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import ConsumerList from './ConsumerList';
 import AddConsumer from './AddConsumer';
-
+import AddOrder from './AddOrder';
+import AddPayment from './AddPayment';
+import Reports from './Reports';
 
 const Tab = createBottomTabNavigator();
 
@@ -50,14 +52,45 @@ export default function ConsumerTabs() {
           )
         }}
       />
+      
       <Tab.Screen
         name='AddConsumer'
         component={AddConsumer}
         options={{
           tabBarLabel: 'Add Consumer',
           tabBarIcon: ({ color, size }) => (
-
             <Ionicons name='person-add-outline' size={size} color={color} />
+          )
+        }}
+      />
+      
+      <Tab.Screen 
+        name='AddOrder'
+        component={AddOrder}
+        options={{
+          tabBarLabel: 'Add Order',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name='create-outline' size={size} color={color} />
+          )
+        }}
+      />
+      <Tab.Screen
+        name='AddPayment'
+        component={AddPayment}
+        options={{
+          tabBarLabel: 'Add Payment',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name='create-outline' size={size} color={color} />
+          )
+        }}
+      />
+      <Tab.Screen
+        name='Reports'
+        component={Reports}
+        options={{
+          tabBarLabel: 'Reports',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name='document-text-outline' size={size} color={color} />
           )
         }}
       />

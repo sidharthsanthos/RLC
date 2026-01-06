@@ -132,15 +132,26 @@ const AddOrder = () => {
   };
 
   const fetchSupplierStock = async (supplierId) => {
+    const yesterday=new Date();
+    yesterday.setDate(yesterday.getDate());
+
+    const formattedDate=yesterday.toISOString().split('T')[0];
+    console.log(formattedDate);
+    
+
     try {
       const { data, error } = await supabase
         .from('Stock')
         .select('*')
         .eq('Supplier_ID', supplierId)
         .gt('Remaining_Quantity', 0)
-        .order('Date', { ascending: true });
+        .gte('Date',formattedDate)
+        .order('Date', { ascending: false });
 
       if (error) throw error;
+
+      console.log('data',data);
+      
 
       if (isMounted.current) {
         setStockItems(data || []);

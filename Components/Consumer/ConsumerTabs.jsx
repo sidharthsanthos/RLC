@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import ConsumerList from './ConsumerList';
 import Reports from './Reports';
+import AddOrder from './AddOrder';
+import AddPayment from './AddPayment';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -66,7 +68,7 @@ export default function ConsumerTabs() {
       
       <Tab.Screen 
         name='AddOrder'
-        component={AddOrderStack}
+        component={AddOrder}
         options={{
           tabBarLabel: 'Add Order',
           tabBarIcon: ({ color, size }) => (
@@ -77,7 +79,7 @@ export default function ConsumerTabs() {
       />
       <Tab.Screen
         name='AddPayment'
-        component={AddPaymentStack}
+        component={AddPayment}
         options={{
           tabBarLabel: 'Add Payment',
           tabBarIcon: ({ color, size }) => (
@@ -88,7 +90,7 @@ export default function ConsumerTabs() {
       />
       <Tab.Screen
         name='Reports'
-        component={ReportsStack}
+        component={Reports}
         options={{
           tabBarLabel: 'Reports',
           tabBarIcon: ({ color, size }) => (

@@ -136,7 +136,9 @@ const SOrder = () => {
                     Total_Bags:orderData.totalBags,
                     Net_Amount:orderData.netAmount,
                     Total_Amount:orderData.totalAmount,
-                    Notes:orderData.notes
+                    Notes:orderData.notes,
+                    Remaining_Bags:orderData.totalBags,
+                    Remaining_Quantity:orderData.quantity
                 }
                ]);
 

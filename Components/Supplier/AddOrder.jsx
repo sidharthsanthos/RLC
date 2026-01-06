@@ -105,6 +105,9 @@ const AddOrder = () => {
   const saveOrder=async ()=>{
     const today=new Date().toISOString().split("T")[0];
 
+    console.log('order data',orderData);
+
+
     if(!selectedSupplier){
       setAlert({type:'error',message:'Select a supplier first'})
       setTimeout(()=>{
@@ -113,17 +116,6 @@ const AddOrder = () => {
       },3000);
       return;
     }
-
-    const isDefault=JSON.stringify(orderData)===JSON.stringify(initialData)
-    
-    // if(isDefault){
-    //   setAlert({type:'error',message:'Please enter all fields'});
-    //   setTimeout(()=>{
-    //     setAlert({type:'',message:''});
-    //     return;
-    //   },5000);
-    //   return;
-    // }
 
     if(orderData.quality===''){
       setAlert({type:'error',message:'Please select Quality'})
@@ -161,7 +153,10 @@ const AddOrder = () => {
       return;
     }
 
+
+
     try{
+      
       const {error:insertError}=await supabase.from('Stock').insert([
         {
           Supplier_ID:selectedSupplier?.id,
@@ -228,7 +223,6 @@ const AddOrder = () => {
         return;
       },3000);
     }
-    
   }
 
   return (

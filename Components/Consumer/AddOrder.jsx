@@ -1,5 +1,6 @@
 import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, FlatList } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
+import { useRoute, useIsFocused } from '@react-navigation/native';
 import { supabase } from '../../utils/supabase';
 import MessageBox from '../MessageBox';
 import { Picker } from '@react-native-picker/picker';
@@ -7,13 +8,18 @@ import { Ionicons } from '@expo/vector-icons';
 
 const AddOrder = () => {
 
+  const route = useRoute();
+  const isFocused = useIsFocused();
+  const consumerFromRoute = route.params?.consumer;
+  const isMounted = useRef(true);
+
   const [consumers, setConsumers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
   const [stockItems, setStockItems] = useState([]);
   const [filteredStockItems, setFilteredStockItems] = useState([]);
   
-  const [selectedConsumer, setSelectedConsumer] = useState(null);
+  const [selectedConsumer, setSelectedConsumer] = useState(consumerFromRoute || null);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [selectedStockAllocations, setSelectedStockAllocations] = useState([]);
   
@@ -34,37 +40,66 @@ const AddOrder = () => {
     "Puducherry"
   ];
 
-  // Fetch Consumers and Suppliers on mount
+  // Cleanup on unmount
   useEffect(() => {
-    fetchConsumers();
-    fetchSuppliers();
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      // Clear all state on unmount
+      setConsumers([]);
+      setSuppliers([]);
+      setFilteredSuppliers([]);
+      setStockItems([]);
+      setFilteredStockItems([]);
+      setSelectedConsumer(null);
+      setSelectedSupplier(null);
+      setSelectedStockAllocations([]);
+      setFilters({ state: '', supplyType: '', quality: '' });
+      setAlert({ type: '', message: '' });
+    };
   }, []);
+
+  // Fetch Consumers and Suppliers on mount or when focused
+  useEffect(() => {
+    if (isFocused) {
+      fetchConsumers();
+      fetchSuppliers();
+    }
+  }, [isFocused]);
 
   // Filter suppliers whenever filters or list changes
   useEffect(() => {
-    filterSuppliersList();
+    if (isMounted.current) {
+      filterSuppliersList();
+    }
   }, [suppliers, filters.state, filters.supplyType]);
 
   // Fetch stock when supplier changes
   useEffect(() => {
-    if (selectedSupplier) {
-      fetchSupplierStock(selectedSupplier.id);
-    } else {
-      setStockItems([]);
-      setFilteredStockItems([]);
+    if (isMounted.current) {
+      if (selectedSupplier) {
+        fetchSupplierStock(selectedSupplier.id);
+      } else {
+        setStockItems([]);
+        setFilteredStockItems([]);
+      }
     }
   }, [selectedSupplier]);
 
   // Filter stock items when quality filter changes
   useEffect(() => {
-    filterStockItems();
+    if (isMounted.current) {
+      filterStockItems();
+    }
   }, [stockItems, filters.quality]);
 
   const fetchConsumers = async () => {
     try {
       const { data, error } = await supabase.from('Consumers').select('*');
       if (error) throw error;
-      setConsumers(data || []);
+      if (isMounted.current) {
+        setConsumers(data || []);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -74,7 +109,9 @@ const AddOrder = () => {
     try {
       const { data, error } = await supabase.from('Suppliers').select('*');
       if (error) throw error;
-      setSuppliers(data || []);
+      if (isMounted.current) {
+        setSuppliers(data || []);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -105,7 +142,9 @@ const AddOrder = () => {
 
       if (error) throw error;
 
-      setStockItems(data || []);
+      if (isMounted.current) {
+        setStockItems(data || []);
+      }
 
     } catch (err) {
       console.error('Error fetching stock:', err);

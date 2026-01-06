@@ -1,23 +1,32 @@
 import {useEffect} from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import ConsumerList from './ConsumerList';
-import AddConsumer from './AddConsumer';
-import AddOrder from './AddOrder';
-import AddPayment from './AddPayment';
 import Reports from './Reports';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+// Separate stack for Reports tab
+const ReportsStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name='ReportsScreen' component={Reports} />
+  </Stack.Navigator>
+);
 
 function BackToScreen({navigation}){
   const isFocused=useIsFocused();
 
   useEffect(() => {
-    if(isFocused){
-      navigation.navigate('Index')
+    if(isFocused && navigation){
+      const timer = setTimeout(() => {
+        navigation.navigate('Index');
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [isFocused]);
+  }, [isFocused, navigation]);
 
   return null;
 }
@@ -42,6 +51,7 @@ export default function ConsumerTabs() {
         }}
       />
 
+
       <Tab.Screen
         name='ConsumerList'
         component={ConsumerList}
@@ -49,49 +59,42 @@ export default function ConsumerTabs() {
           tabBarLabel: 'Consumers',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name='people-outline' size={size} color={color} />
-          )
-        }}
-      />
-      
-      <Tab.Screen
-        name='AddConsumer'
-        component={AddConsumer}
-        options={{
-          tabBarLabel: 'Add Consumer',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name='person-add-outline' size={size} color={color} />
-          )
+          ),
+          unmountOnBlur: true
         }}
       />
       
       <Tab.Screen 
         name='AddOrder'
-        component={AddOrder}
+        component={AddOrderStack}
         options={{
           tabBarLabel: 'Add Order',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name='create-outline' size={size} color={color} />
-          )
+            <Ionicons name='cart-outline' size={size} color={color} />
+          ),
+          unmountOnBlur: true
         }}
       />
       <Tab.Screen
         name='AddPayment'
-        component={AddPayment}
+        component={AddPaymentStack}
         options={{
           tabBarLabel: 'Add Payment',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name='create-outline' size={size} color={color} />
-          )
+            <Ionicons name='wallet-outline' size={size} color={color} />
+          ),
+          unmountOnBlur: true
         }}
       />
       <Tab.Screen
         name='Reports'
-        component={Reports}
+        component={ReportsStack}
         options={{
           tabBarLabel: 'Reports',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name='document-text-outline' size={size} color={color} />
-          )
+          ),
+          unmountOnBlur: true
         }}
       />
     </Tab.Navigator>

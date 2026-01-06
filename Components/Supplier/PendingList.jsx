@@ -1,6 +1,6 @@
 import { Platform, StatusBar, StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 import { useNavigation } from '@react-navigation/native';
 
 

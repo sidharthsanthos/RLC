@@ -1,6 +1,6 @@
 import { Platform, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 
 const StockValue = () => {
 

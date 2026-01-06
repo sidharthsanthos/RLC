@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 import PendingSupplierRow from './PSR';
 
 const PendingSuppliersScreen = ({refreshKey}) => {
@@ -48,7 +48,7 @@ const PendingSuppliersScreen = ({refreshKey}) => {
 
   const handleViewAll = () => {
     // Navigate to a full list screen
-    navigation.navigate('AllPendingSuppliers'); // Create this screen if needed
+    navigation.navigate('PendingSuppliers'); // Create this screen if needed
   };
 
   if (loading) {

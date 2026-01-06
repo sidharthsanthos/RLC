@@ -191,6 +191,17 @@ const OrderItem = ({ item, index }) => {
                         </View>
                         )}
 
+                        {/* ===== EDIT BUTTON ===== */}
+                        <TouchableOpacity
+                            style={styles.OrderEditBtn}
+                            onPress={() => {
+                                setModalView(false);
+                                navigation.navigate('EditOrder', { itemID });
+                            }}
+                        >
+                            <Text style={styles.closeText}>Edit Order</Text>
+                        </TouchableOpacity>
+
                         {/* ===== CLOSE BUTTON ===== */}
                         <TouchableOpacity
                         style={styles.closeBtn}
@@ -331,7 +342,7 @@ const ConsumerDetails = ({ route }) => {
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ImagePicker.MediaType.Images,
                 allowsEditing: true,
                 quality: 0.7,
             });
@@ -371,7 +382,7 @@ const ConsumerDetails = ({ route }) => {
             const filePath = `Logos/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
-                .from('Logos')
+                .from('consumer_logos')
                 .upload(filePath, fileBytes, {
                     contentType: `image/${fileExt}`,
                     cacheControl: '3600',
@@ -385,7 +396,7 @@ const ConsumerDetails = ({ route }) => {
             }
 
             const { data: publicData } = supabase.storage
-                .from('Logos')
+                .from('consumer_logos')
                 .getPublicUrl(filePath);
 
             const newPublicUrl = publicData?.publicUrl;
@@ -409,7 +420,7 @@ const ConsumerDetails = ({ route }) => {
 
             if (oldUrl) {
                 const { error: removeErr } = await supabase.storage
-                    .from('Logos')
+                    .from('consumer_logos')
                     .remove([oldUrl]);
                 if (removeErr) {
                     console.warn('Failed to delete old image:', removeErr.message);

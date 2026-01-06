@@ -504,7 +504,7 @@ const SupplierDetails = ({ route }) => {
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ImagePicker.MediaType.Images,
                 allowsEditing: true,
                 quality: 0.7,
             });
@@ -544,7 +544,7 @@ const SupplierDetails = ({ route }) => {
             const filePath = `Logos/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
-                .from('Logos')
+                .from('supplier_logos')
                 .upload(filePath, fileBytes, {
                     contentType: `image/${fileExt}`,
                     cacheControl: '3600',
@@ -558,7 +558,7 @@ const SupplierDetails = ({ route }) => {
             }
 
             const { data: publicData } = supabase.storage
-                .from('Logos')
+                .from('supplier_logos')
                 .getPublicUrl(filePath);
 
             const newPublicUrl = publicData?.publicUrl;
@@ -582,7 +582,7 @@ const SupplierDetails = ({ route }) => {
 
             if (oldUrl) {
                 const { error: removeErr } = await supabase.storage
-                    .from('Logos')
+                    .from('supplier')
                     .remove([oldUrl]);
                 if (removeErr) {
                     console.warn('Failed to delete old image:', removeErr.message);

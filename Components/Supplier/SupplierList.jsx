@@ -10,17 +10,21 @@ import OrderDetails from './OrderDetails';
 import EditOrder from './EditOrder';
 import PaymentDetails from './PaymentDetails';
 import EditPayment from './EditPayment';
-import PendingList from '../Dashboard/PendingList';
-import PTM from '../Dashboard/PTM';
-import TotalSuppliers from '../Dashboard/TotalSuppliers';
-import StockValue from '../Dashboard/StockValue';
+import PendingList from './PendingList';
+import PTM from '../SupplierDashboard/PTM';
+import TotalSuppliers from '../SupplierDashboard/TotalSuppliers';
+import StockValue from '../SupplierDashboard/StockValue';
 import AddSupplier from './AddSupplier';
+import AddOrder from './AddOrder';
+import AddPayment from './AddPayment';
+import AddOrder from './AddOrder';
+import AddPayment from './AddPayment';
 
 const Stack=createStackNavigator();
 
 const SupplierList = () => {
   return (
-    <Stack.Navigator screenOptions={{headerShown:false}}>
+    <Stack.Navigator initialRouteName='SupplierMain' screenOptions={{headerShown:false}}>
       <Stack.Screen name='SupplierMain' component={SMain}/>
       <Stack.Screen name='SupplierDetails' component={SupplierDetails}/>
       <Stack.Screen name='SupplierOrder' component={SOrder}/>
@@ -35,10 +39,10 @@ const SupplierList = () => {
       <Stack.Screen name='TotalSuppliers' component={TotalSuppliers}/>
       <Stack.Screen name='StockValue' component={StockValue}/>
       <Stack.Screen name='AddSupplier' component={AddSupplier}/>
+      <Stack.Screen name='AddOrder' component={AddOrder}/>
+      <Stack.Screen name='AddPayment' component={AddPayment}/>
     </Stack.Navigator>
   )
 }
 
 export default SupplierList
-
-const styles = StyleSheet.create({})

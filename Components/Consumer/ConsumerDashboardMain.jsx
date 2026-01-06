@@ -3,34 +3,34 @@ import React, { useEffect, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../utils/supabase';
 import { useNavigation } from '@react-navigation/native';
-import KPI from '../SupplierDashboard/KPI';
-import MonthlyTransactionChart from '../SupplierDashboard/MTC';
-import PendingSuppliersScreen from '../SupplierDashboard/PendingSuppliers';
+import KPI from '../ConsumerDashboard/KPI';
+import MonthlyTransactionChart from '../ConsumerDashboard/MTC';
+import PendingConsumers from '../ConsumerDashboard/PendingConsumers';
 
-const SMain = () => {
+const ConsumerDashboardMain = () => {
 
     const navigation = useNavigation();    
     const [searchText, setSearchText] = useState('');
-    const [suppliers, setSuppliers] = useState([]);
+    const [consumers, setConsumers] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [refreshing,setRefreshing]=useState(false);
-    const [refreshKey,setRefreshKey]=useState(0);
+    const [refreshing, setRefreshing] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    const fetchSuppliers = async () => {
+    const fetchConsumers = async () => {
         try {
             setLoading(true);
             const { data, error } = await supabase
-                .from('Suppliers')
+                .from('Consumers')
                 .select('id, Name, By_Name')
                 .order('Name', { ascending: true });
             
             if (error) {
-                console.error('Supplier Selection Error Occurred:', error.message);
+                console.error('Consumer Selection Error Occurred:', error.message);
                 return;
             }
 
-            setSuppliers(data || []);
+            setConsumers(data || []);
         } catch (err) {
             console.error('Unexpected Error Occurred:', err);
         } finally {
@@ -39,7 +39,7 @@ const SMain = () => {
     }
 
     useEffect(() => {
-        fetchSuppliers();
+        fetchConsumers();
     }, []);
 
     useEffect(() => {
@@ -48,26 +48,24 @@ const SMain = () => {
             return;
         }
 
-        const results = suppliers.filter(item =>
+        const results = consumers.filter(item =>
             item.Name.toLowerCase().includes(searchText.toLowerCase())
         );
 
         setFiltered(results);
-    }, [searchText, suppliers]);
+    }, [searchText, consumers]);
 
     const clearSearch = () => {
         setSearchText('');
         setFiltered([]);
     };
 
-    const onRefresh=async ()=>{
+    const onRefresh = async () => {
         setRefreshing(true);
-
-        setRefreshKey(prev=>prev+1)
-
-        setTimeout(()=>{
+        setRefreshKey(prev => prev + 1);
+        setTimeout(() => {
             setRefreshing(false);
-        },500);
+        }, 500);
     }
 
     return (
@@ -77,7 +75,7 @@ const SMain = () => {
                 <Ionicons name='search' size={20} color='#888' style={styles.searchIcon} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder='Search suppliers...'
+                    placeholder='Search consumers...'
                     placeholderTextColor='#999'
                     value={searchText}
                     onChangeText={setSearchText}
@@ -105,18 +103,18 @@ const SMain = () => {
                         renderItem={({ item }) => (
                             <Pressable 
                                 style={({ pressed }) => [
-                                    styles.supplierCard,
-                                    pressed && styles.supplierCardPressed
+                                    styles.consumerCard,
+                                    pressed && styles.consumerCardPressed
                                 ]} 
-                                onPress={() => navigation.navigate("SupplierDetails", { supplierID: item.id })}
+                                onPress={() => navigation.navigate("ConsumerDetails", { consumerID: item.id })}
                             >
-                                <View style={styles.supplierIconContainer}>
-                                    <Ionicons name="business-outline" size={24} color="#4f46e5" />
+                                <View style={styles.consumerIconContainer}>
+                                    <Ionicons name="person-outline" size={24} color="#2563EB" />
                                 </View>
-                                <View style={styles.supplierInfo}>
-                                    <Text style={styles.supplierName}>{item.Name}</Text>
+                                <View style={styles.consumerInfo}>
+                                    <Text style={styles.consumerName}>{item.Name}</Text>
                                     {item.By_Name && (
-                                        <Text style={styles.supplierSubtext}>By: {item.By_Name}</Text>
+                                        <Text style={styles.consumerSubtext}>By: {item.By_Name}</Text>
                                     )}
                                 </View>
                                 <Ionicons name="chevron-forward" size={20} color="#d1d5db" />
@@ -129,7 +127,7 @@ const SMain = () => {
                     {filtered.length === 0 && !loading && (
                         <View style={styles.emptyStateContainer}>
                             <Ionicons name="search-outline" size={64} color="#d1d5db" />
-                            <Text style={styles.emptyStateText}>No suppliers found</Text>
+                            <Text style={styles.emptyStateText}>No consumers found</Text>
                             <Text style={styles.emptyStateSubtext}>
                                 Try searching with a different name
                             </Text>
@@ -137,45 +135,45 @@ const SMain = () => {
                     )}
                 </View>
             ) : (
-                /* SupplierDashboard View */
+                /* Dashboard View */
                 <ScrollView 
-                    style={styles.SupplierDashboardScroll}
+                    style={styles.dashboardScroll}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.SupplierDashboardContent}
+                    contentContainerStyle={styles.dashboardContent}
                     refreshControl={
                         <RefreshControl
                            refreshing={refreshing}
                            onRefresh={onRefresh}
-                           colors={['#4f46e5']}
+                           colors={['#2563EB']}
                         />
                     }   
                 >
-                    {/* Add Supplier Card */}
+                    {/* Add Consumer Card */}
                     <Pressable
                         style={({ pressed }) => [
-                            styles.addSupplierCard,
-                            pressed && styles.addSupplierCardPressed
+                            styles.addConsumerCard,
+                            pressed && styles.addConsumerCardPressed
                         ]}
-                        onPress={() => navigation.navigate('AddSupplier')}
+                        onPress={() => navigation.navigate('AddConsumer')}
                     >
-                        <View style={styles.addSupplierIcon}>
-                            <Ionicons name="add-circle" size={28} color="#4f46e5" />
+                        <View style={styles.addConsumerIcon}>
+                            <Ionicons name="add-circle" size={28} color="#2563EB" />
                         </View>
-                        <View style={styles.addSupplierContent}>
-                            <Text style={styles.addSupplierTitle}>Add New Supplier</Text>
-                            <Text style={styles.addSupplierSub}>Create a new supplier entry</Text>
+                        <View style={styles.addConsumerContent}>
+                            <Text style={styles.addConsumerTitle}>Add New Consumer</Text>
+                            <Text style={styles.addConsumerSub}>Create a new consumer entry</Text>
                         </View>
-                        <Ionicons name="arrow-forward" size={20} color="#4f46e5" />
+                        <Ionicons name="arrow-forward" size={20} color="#2563EB" />
                     </Pressable>
 
                     {/* KPI Cards */}
-                    <KPI refreshKey={refreshKey}/>
+                    <KPI refreshKey={refreshKey} />
 
                     {/* Monthly Chart */}
-                    <MonthlyTransactionChart refreshKey={refreshKey}/>
+                    <MonthlyTransactionChart refreshKey={refreshKey} />
 
-                    {/* Pending Suppliers */}
-                    <PendingSuppliersScreen refreshKey={refreshKey}/>
+                    {/* Pending Consumers */}
+                    <PendingConsumers refreshKey={refreshKey} />
 
                     {/* Bottom Spacing */}
                     <View style={styles.bottomSpacer} />
@@ -185,7 +183,7 @@ const SMain = () => {
     );
 }
 
-export default SMain;
+export default ConsumerDashboardMain;
 
 const styles = StyleSheet.create({
     container: {
@@ -245,7 +243,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
 
-    supplierCard: {
+    consumerCard: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
@@ -261,32 +259,32 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
     },
 
-    supplierCardPressed: {
+    consumerCardPressed: {
         backgroundColor: '#f9fafb',
     },
 
-    supplierIconContainer: {
+    consumerIconContainer: {
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#f0f1ff',
+        backgroundColor: '#E3F2FD',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
 
-    supplierInfo: {
+    consumerInfo: {
         flex: 1,
     },
 
-    supplierName: {
+    consumerName: {
         fontSize: 16,
         fontWeight: '600',
         color: '#1a1a1a',
         marginBottom: 2,
     },
 
-    supplierSubtext: {
+    consumerSubtext: {
         fontSize: 13,
         color: '#666',
     },
@@ -312,16 +310,16 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-    // SupplierDashboard Styles
-    SupplierDashboardScroll: {
+    // Dashboard Styles
+    dashboardScroll: {
         flex: 1,
     },
 
-    SupplierDashboardContent: {
+    dashboardContent: {
         paddingBottom: 20,
     },
 
-    addSupplierCard: {
+    addConsumerCard: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#ffffff',
@@ -330,35 +328,35 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginBottom: 8,
         borderWidth: 2,
-        borderColor: '#e5e7ff',
+        borderColor: '#BBDEFB',
         elevation: 2,
-        shadowColor: '#4f46e5',
+        shadowColor: '#2563EB',
         shadowOpacity: 0.08,
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 8,
     },
 
-    addSupplierCardPressed: {
-        backgroundColor: '#f8f9ff',
-        borderColor: '#d1d5ff',
+    addConsumerCardPressed: {
+        backgroundColor: '#E3F2FD',
+        borderColor: '#90CAF9',
     },
 
-    addSupplierIcon: {
+    addConsumerIcon: {
         marginRight: 12,
     },
 
-    addSupplierContent: {
+    addConsumerContent: {
         flex: 1,
     },
 
-    addSupplierTitle: {
+    addConsumerTitle: {
         fontSize: 16,
         fontWeight: '700',
         color: '#1a1a1a',
         marginBottom: 2,
     },
 
-    addSupplierSub: {
+    addConsumerSub: {
         fontSize: 13,
         color: '#666',
         fontWeight: '500',

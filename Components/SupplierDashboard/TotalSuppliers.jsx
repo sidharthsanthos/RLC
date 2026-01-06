@@ -1,7 +1,7 @@
 import { Platform, StatusBar, StyleSheet, Text, View, FlatList, Image, ActivityIndicator, TouchableOpacity } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../supabaseConfig';
 import { useNavigation } from '@react-navigation/native';
+import { supabase } from '../../utils/supabase';
 import UserIcon from '../../assets/user_icon.jpg';
 
 const TotalSuppliers = () => {

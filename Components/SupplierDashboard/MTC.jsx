@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Dimensions, StyleSheet, ActivityIndicator } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { supabase } from '../supabaseConfig';
+import { supabase } from '../../utils/supabase';
 
 const screenWidth = Dimensions.get('window').width;
 

@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, FlatList } from 'react-native'
+import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, KeyboardAvoidingView, Modal } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import { useRoute, useIsFocused } from '@react-navigation/native';
 import { supabase } from '../../utils/supabase';
@@ -18,6 +18,8 @@ const AddOrder = () => {
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
   const [stockItems, setStockItems] = useState([]);
   const [filteredStockItems, setFilteredStockItems] = useState([]);
+  const [stockDates, setStockDates] = useState([]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   const [selectedConsumer, setSelectedConsumer] = useState(consumerFromRoute || null);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -26,7 +28,8 @@ const AddOrder = () => {
   const [filters, setFilters] = useState({
     state: '',
     supplyType: '',
-    quality: ''
+    quality: '',
+    date: null
   });
 
   const [alert, setAlert] = useState({ type: '', message: '' });
@@ -51,10 +54,11 @@ const AddOrder = () => {
       setFilteredSuppliers([]);
       setStockItems([]);
       setFilteredStockItems([]);
+      setStockDates([]);
       setSelectedConsumer(null);
       setSelectedSupplier(null);
       setSelectedStockAllocations([]);
-      setFilters({ state: '', supplyType: '', quality: '' });
+      setFilters({ state: '', supplyType: '', quality: '', date: null });
       setAlert({ type: '', message: '' });
     };
   }, []);
@@ -86,12 +90,12 @@ const AddOrder = () => {
     }
   }, [selectedSupplier]);
 
-  // Filter stock items when quality filter changes
+  // Filter stock items when quality or date filter changes
   useEffect(() => {
     if (isMounted.current) {
       filterStockItems();
     }
-  }, [stockItems, filters.quality]);
+  }, [stockItems, filters.quality, filters.date]);
 
   const fetchConsumers = async () => {
     try {
@@ -132,29 +136,24 @@ const AddOrder = () => {
   };
 
   const fetchSupplierStock = async (supplierId) => {
-    const yesterday=new Date();
-    yesterday.setDate(yesterday.getDate());
-
-    const formattedDate=yesterday.toISOString().split('T')[0];
-    console.log(formattedDate);
-    
-
     try {
       const { data, error } = await supabase
         .from('Stock')
         .select('*')
         .eq('Supplier_ID', supplierId)
         .gt('Remaining_Quantity', 0)
-        .gte('Date',formattedDate)
         .order('Date', { ascending: false });
 
       if (error) throw error;
 
       console.log('data',data);
       
-
       if (isMounted.current) {
         setStockItems(data || []);
+        
+        // Extract unique dates with stock
+        const uniqueDates = [...new Set(data.map(item => item.Date))];
+        setStockDates(uniqueDates);
       }
 
     } catch (err) {
@@ -169,11 +168,17 @@ const AddOrder = () => {
       temp = temp.filter(item => item.Quality === filters.quality);
     }
 
+    if (filters.date) {
+      const selectedDate = filters.date.toISOString().split('T')[0];
+      temp = temp.filter(item => item.Date === selectedDate);
+    }
+
     setFilteredStockItems(temp);
   };
 
-  const handleStockSelection = (stockItem, quantity) => {
+  const handleStockSelection = (stockItem, quantity, customRate) => {
     const qty = Number(quantity) || 0;
+    const rate = Number(customRate) || stockItem.Net_Amount;
     
     if (qty < 0 || qty > stockItem.Remaining_Quantity) {
       return;
@@ -192,7 +197,6 @@ const AddOrder = () => {
       }
     } else {
       // Calculate proportional amount based on stock's rate
-      const rate = stockItem.Net_Amount;
       const bags = selectedSupplier?.Supply_Type === 1 
         ? qty 
         : Math.min(qty, stockItem.Remaining_Bags);
@@ -203,7 +207,8 @@ const AddOrder = () => {
         stockItem: stockItem,
         quantity: qty,
         bags: bags,
-        amount: amount
+        amount: amount,
+        rate: rate
       };
 
       if (existingIndex !== -1) {
@@ -304,7 +309,7 @@ const AddOrder = () => {
       setSelectedStockAllocations([]);
       setSelectedConsumer(null);
       setSelectedSupplier(null);
-      setFilters({ state: '', supplyType: '', quality: '' });
+      setFilters({ state: '', supplyType: '', quality: '', date: null });
       fetchConsumers();
       fetchSuppliers();
 
@@ -319,13 +324,24 @@ const AddOrder = () => {
     setTimeout(() => setAlert({ type: '', message: '' }), 3000);
   };
 
+  const formatDisplayDate = (date) => {
+    if (!date) return 'Select Date';
+    const d = new Date(date);
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      {alert.message !== "" && (
-        <MessageBox type={alert.type} message={alert.message} />
-      )}
-      
-      <Text style={styles.header}>Place Consumer Order</Text>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        {alert.message !== "" && (
+          <MessageBox type={alert.type} message={alert.message} />
+        )}
+        
+        <Text style={styles.header}>Place Consumer Order</Text>
 
       {/* 1. Select Consumer */}
       <View style={styles.section}>
@@ -386,22 +402,107 @@ const AddOrder = () => {
         </View>
       </View>
 
-      {/* 4. Filter by Quality */}
+      {/* 4. Filter by Quality and Date */}
       {selectedSupplier && stockItems.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.label}>Filter by Quality</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={filters.quality}
-              onValueChange={(v) => setFilters(prev => ({...prev, quality: v}))}
-            >
-              <Picker.Item label="All Qualities" value="" />
-              <Picker.Item label="Good" value="Good" />
-              <Picker.Item label="Average" value="Average" />
-              <Picker.Item label="Bad" value="Bad" />
-            </Picker>
+        <>
+          <View style={styles.row}>
+            <View style={[styles.section, {flex: 1, marginRight: 5}]}>
+              <Text style={styles.label}>Filter by Quality</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={filters.quality}
+                  onValueChange={(v) => setFilters(prev => ({...prev, quality: v}))}
+                >
+                  <Picker.Item label="All Qualities" value="" />
+                  <Picker.Item label="Good" value="Good" />
+                  <Picker.Item label="Average" value="Average" />
+                  <Picker.Item label="Bad" value="Bad" />
+                </Picker>
+              </View>
+            </View>
+
+            <View style={[styles.section, {flex: 1, marginLeft: 5}]}>
+              <Text style={styles.label}>Filter by Date</Text>
+              <TouchableOpacity 
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Ionicons name="calendar-outline" size={18} color="#666" />
+                <Text style={styles.dateButtonText}>{formatDisplayDate(filters.date)}</Text>
+              </TouchableOpacity>
+              {filters.date && (
+                <TouchableOpacity 
+                  onPress={() => setFilters(prev => ({...prev, date: null}))}
+                  style={styles.clearDateBtn}
+                >
+                  <Text style={styles.clearDateText}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </View>
+
+          {/* Date Picker */}
+          {showDatePicker && (
+            <Modal
+              transparent
+              animationType="slide"
+              visible={showDatePicker}
+              onRequestClose={() => setShowDatePicker(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.datePickerContainer}>
+                  <View style={styles.datePickerHeader}>
+                    <Text style={styles.datePickerTitle}>Select Stock Date</Text>
+                    <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                      <Ionicons name="close" size={24} color="#666" />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <Text style={styles.stockDatesSubtitle}>
+                    Choose from available dates with stock:
+                  </Text>
+                  
+                  <ScrollView style={styles.stockDatesList}>
+                    {stockDates.length > 0 ? (
+                      stockDates.map((dateStr, index) => {
+                        const isSelected = filters.date && filters.date.toISOString().split('T')[0] === dateStr;
+                        return (
+                          <TouchableOpacity
+                            key={index}
+                            style={[styles.stockDateItem, isSelected && styles.stockDateItemSelected]}
+                            onPress={() => {
+                              setFilters(prev => ({ ...prev, date: new Date(dateStr) }));
+                              setShowDatePicker(false);
+                            }}
+                          >
+                            <Ionicons 
+                              name={isSelected ? "checkmark-circle" : "calendar-outline"} 
+                              size={20} 
+                              color={isSelected ? "#07c3f7" : "#51CF66"} 
+                            />
+                            <Text style={[styles.stockDateText, isSelected && styles.stockDateTextSelected]}>
+                              {new Date(dateStr).toLocaleDateString('en-IN', { 
+                                weekday: 'short',
+                                day: '2-digit', 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })
+                    ) : (
+                      <View style={styles.noStockDates}>
+                        <Ionicons name="calendar-outline" size={48} color="#ccc" />
+                        <Text style={styles.noStockDatesText}>No stock dates available</Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                </View>
+              </View>
+            </Modal>
+          )}
+        </>
       )}
 
       {/* 5. Available Stock List */}
@@ -411,21 +512,15 @@ const AddOrder = () => {
           {filteredStockItems.length === 0 ? (
             <Text style={styles.emptyText}>No stock available</Text>
           ) : (
-            <FlatList
-              data={filteredStockItems}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <StockItemCard
-                  item={item}
-                  supplyType={selectedSupplier.Supply_Type}
-                  onQuantityChange={(qty) => handleStockSelection(item, qty)}
-                  selectedQty={
-                    selectedStockAllocations.find(a => a.stockId === item.id)?.quantity || 0
-                  }
-                />
-              )}
-              scrollEnabled={false}
-            />
+            filteredStockItems.map((item) => (
+              <StockItemCard
+                key={item.id.toString()}
+                item={item}
+                supplyType={selectedSupplier.Supply_Type}
+                onSelectionChange={(qty, rate) => handleStockSelection(item, qty, rate)}
+                selectedAllocation={selectedStockAllocations.find(a => a.stockId === item.id)}
+              />
+            ))
           )}
         </View>
       )}
@@ -450,7 +545,8 @@ const AddOrder = () => {
         </View>
       )}
 
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -664,16 +760,140 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#07c3f7'
+  },
+  dateButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  dateButtonText: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1
+  },
+  clearDateBtn: {
+    marginTop: 4,
+    alignSelf: 'flex-end'
+  },
+  clearDateText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    fontWeight: '600'
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 16
+  },
+  datePickerContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    maxHeight: '70%',
+    minHeight: 300
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0'
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333'
+  },
+  stockDatesSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    textAlign: 'center'
+  },
+  stockDatesList: {
+    maxHeight: 400
+  },
+  stockDateItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginVertical: 4,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0'
+  },
+  stockDateItemSelected: {
+    backgroundColor: '#e6f7ff',
+    borderColor: '#07c3f7',
+    borderWidth: 2
+  },
+  stockDateText: {
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '500',
+    flex: 1
+  },
+  stockDateTextSelected: {
+    color: '#07c3f7',
+    fontWeight: '700'
+  },
+  noStockDates: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60
+  },
+  noStockDatesText: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 12
   }
 })
 
-const StockItemCard = ({ item, supplyType, onQuantityChange, selectedQty }) => {
-  const [quantity, setQuantity] = useState(selectedQty.toString());
+const StockItemCard = ({ item, supplyType, onSelectionChange, selectedAllocation }) => {
+  const [quantity, setQuantity] = useState(selectedAllocation?.quantity?.toString() || '');
+  const [rate, setRate] = useState(selectedAllocation?.rate?.toString() || item.Net_Amount.toString());
 
-  const handleChange = (value) => {
+  const handleQuantityChange = (value) => {
+    // Allow empty string for editing
+    if (value === '') {
+      setQuantity('');
+      onSelectionChange(0, rate);
+      return;
+    }
+    
+    const num = Number(value);
+    
+    // Validate: must be a valid number, non-negative, and not exceed max
+    if (isNaN(num) || num < 0) {
+      return; // Don't update if invalid
+    }
+    
+    if (num > item.Remaining_Quantity) {
+      // Cap at maximum available
+      setQuantity(item.Remaining_Quantity.toString());
+      onSelectionChange(item.Remaining_Quantity, rate);
+      return;
+    }
+    
     setQuantity(value);
-    const num = Number(value) || 0;
-    onQuantityChange(num);
+    onSelectionChange(num, rate);
+  };
+
+  const handleRateChange = (value) => {
+    setRate(value);
+    const num = Number(value) || item.Net_Amount;
+    onSelectionChange(quantity, num);
   };
 
   const formatDate = (dateStr) => {
@@ -707,7 +927,7 @@ const StockItemCard = ({ item, supplyType, onQuantityChange, selectedQty }) => {
           </Text>
         </View>
         <View style={styles.stockRow}>
-          <Text style={styles.stockLabel}>Rate:</Text>
+          <Text style={styles.stockLabel}>Original Rate:</Text>
           <Text style={styles.stockValue}>₹{item.Net_Amount}</Text>
         </View>
         {item.Notes && (
@@ -716,22 +936,34 @@ const StockItemCard = ({ item, supplyType, onQuantityChange, selectedQty }) => {
       </View>
 
       <View style={styles.quantitySelector}>
-        <Text style={styles.quantityLabel}>Select Quantity:</Text>
+        <Text style={styles.quantityLabel}>Quantity:</Text>
         <TextInput
           style={styles.quantityInput}
           keyboardType="numeric"
           placeholder="0"
           value={quantity}
-          onChangeText={handleChange}
+          onChangeText={handleQuantityChange}
         />
         <Text style={styles.maxText}>Max: {item.Remaining_Quantity}</Text>
       </View>
 
-      {selectedQty > 0 && (
+      <View style={styles.quantitySelector}>
+        <Text style={styles.quantityLabel}>Rate (₹):</Text>
+        <TextInput
+          style={styles.quantityInput}
+          keyboardType="numeric"
+          placeholder={item.Net_Amount.toString()}
+          value={rate}
+          onChangeText={handleRateChange}
+        />
+        <Text style={styles.maxText}>per unit</Text>
+      </View>
+
+      {selectedAllocation && selectedAllocation.quantity > 0 && (
         <View style={styles.selectedInfo}>
           <Ionicons name="checkmark-circle" size={16} color="#51CF66" />
           <Text style={styles.selectedText}>
-            Amount: ₹{(selectedQty * item.Net_Amount).toLocaleString()}
+            Amount: ₹{(selectedAllocation.amount).toLocaleString()}
           </Text>
         </View>
       )}

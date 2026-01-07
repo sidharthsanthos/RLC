@@ -2,46 +2,46 @@ import { FlatList, Platform, StatusBar, StyleSheet, Text, View } from 'react-nat
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../../utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { OrderItem } from './ConsumerDetails';
+import { TransactionItem } from './ConsumerDetails';
 
-const OrderDetails = ({route}) => {
-    const {consumerID}=route.params;
+const RecentTransactions = ({route}) => {
+    const {consumerID, consumer} = route.params;
     
-    const [orders,setOrders]=useState([]);
+    const [transactions, setTransactions] = useState([]);
 
-    const fetchOrders=async ()=>{
-        try{
+    const fetchTransactions = async () => {
+        try {
             const {data, error} = await supabase
                .from('Transactions')
                .select('*')
                .eq('ref_id', consumerID)
                .eq('ref_type', 'consumer')
-               .eq('transaction_type', 'debit')
+               .eq('transaction_type', 'credit')
                .order('created_at', {ascending: false});
 
-            if(error){
-                console.error('Orders Fetching Error Occurred', error.message);
+            if (error) {
+                console.error('Transactions Fetching Error Occurred', error.message);
                 return;
             }
 
-            setOrders(data || []);
-        }catch(err){
+            setTransactions(data || []);
+        } catch (err) {
             console.error('Unexpected Error Occurred', err);
         }
     }
 
-    useEffect(()=>{
-        fetchOrders();
-    },[]);
+    useEffect(() => {
+        fetchTransactions();
+    }, []);
     
     return (
-        <View style={styles.container} >
-            {orders && orders.length > 0 ? (
+        <View style={styles.container}>
+            {transactions && transactions.length > 0 ? (
                 <FlatList
-                    data={orders}
+                    data={transactions}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item, index }) => (
-                        <OrderItem item={item} index={index} />
+                        <TransactionItem item={item} index={index} consumer={consumer} />
                     )}
                     ItemSeparatorComponent={() => <View style={styles.separator} />}
                     contentContainerStyle={styles.listContent}
@@ -49,18 +49,18 @@ const OrderDetails = ({route}) => {
                 />
             ) : (
                 <View style={styles.emptyState}>
-                    <Ionicons name="cart-outline" size={48} color="#E0E0E0" />
-                    <Text style={styles.emptyText}>No orders yet</Text>
+                    <Ionicons name="receipt-outline" size={48} color="#E0E0E0" />
+                    <Text style={styles.emptyText}>No transactions yet</Text>
                 </View>
             )}
         </View>
     )
 }
 
-export default OrderDetails
+export default RecentTransactions
 
 const styles = StyleSheet.create({
-    container:{
+    container: {
         flex: 1,
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         backgroundColor: '#F5F7FA',

@@ -10,6 +10,7 @@ import AddOrder from './AddOrder';
 import AddPayment from './AddPayment';
 import PendingConsumers from '../ConsumerDashboard/PendingConsumers';
 import ConsumerDashboard from './ConsumerDashboard';
+import RecentTransactions from './RecentTransactions';
 
 const Stack = createStackNavigator();
 
@@ -23,6 +24,7 @@ const ConsumerList = () => {
       <Stack.Screen name='ConsumerPayment' component={CPayment} />
       <Stack.Screen name='EditConsumer' component={EditConsumer} />
       <Stack.Screen name='OrderDetails' component={OrderDetails} />
+      <Stack.Screen name='RecentTransactions' component={RecentTransactions} />
       <Stack.Screen name='EditOrder' component={EditOrder} />
       <Stack.Screen name='AddOrder' component={AddOrder} />
       <Stack.Screen name='AddPayment' component={AddPayment} />

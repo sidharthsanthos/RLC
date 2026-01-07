@@ -9,7 +9,9 @@ const MonthlyTransactionChart = ({ refreshKey }) => {
     const [chartData, setChartData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [totalAmount, setTotalAmount] = useState(0);
+    const [totalSales, setTotalSales] = useState(0);
+    const [totalPayments, setTotalPayments] = useState(0);
+    const [currentPending, setCurrentPending] = useState(0);
 
     useEffect(() => {
         fetchMonthlyTrend();
@@ -44,15 +46,32 @@ const MonthlyTransactionChart = ({ refreshKey }) => {
                 new Date(item.month).toLocaleString('default', { month: 'short' })
             );
 
-            const values = sortedData.map(item => parseFloat(item.total_amount) || 0);
+            const salesValues = sortedData.map(item => parseFloat(item.total_sales) || 0);
+            const paymentValues = sortedData.map(item => parseFloat(item.total_payments) || 0);
 
-            // Calculate total for display
-            const total = values.reduce((sum, val) => sum + val, 0);
-            setTotalAmount(total);
+            // Calculate totals for display
+            const totalSalesSum = salesValues.reduce((sum, val) => sum + val, 0);
+            const totalPaymentsSum = paymentValues.reduce((sum, val) => sum + val, 0);
+            const latestPending = parseFloat(sortedData[sortedData.length - 1]?.current_pending) || 0;
+
+            setTotalSales(totalSalesSum);
+            setTotalPayments(totalPaymentsSum);
+            setCurrentPending(latestPending);
 
             setChartData({
                 labels,
-                datasets: [{ data: values }]
+                datasets: [
+                    {
+                        data: salesValues,
+                        color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
+                        strokeWidth: 2
+                    },
+                    {
+                        data: paymentValues,
+                        color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
+                        strokeWidth: 2
+                    }
+                ]
             });
         } catch (err) {
             console.error('Unexpected error:', err);
@@ -91,15 +110,25 @@ const MonthlyTransactionChart = ({ refreshKey }) => {
                 <Text style={styles.subtitle}>Last 6 Months</Text>
             </View>
 
-            <View style={styles.totalSection}>
-                <Text style={styles.totalLabel}>Total Sales</Text>
-                <Text style={styles.totalAmount}>₹{totalAmount.toLocaleString('en-IN')}</Text>
+            <View style={styles.statsGrid}>
+                <View style={[styles.statCard, styles.salesCard]}>
+                    <Text style={styles.statLabel}>Total Sales</Text>
+                    <Text style={[styles.statAmount, styles.salesAmount]}>₹{totalSales.toLocaleString('en-IN')}</Text>
+                </View>
+                <View style={[styles.statCard, styles.paymentsCard]}>
+                    <Text style={styles.statLabel}>Total Payments</Text>
+                    <Text style={[styles.statAmount, styles.paymentsAmount]}>₹{totalPayments.toLocaleString('en-IN')}</Text>
+                </View>
+                <View style={[styles.statCard, styles.pendingCard]}>
+                    <Text style={styles.statLabel}>Current Pending</Text>
+                    <Text style={[styles.statAmount, styles.pendingAmount]}>₹{currentPending.toLocaleString('en-IN')}</Text>
+                </View>
             </View>
 
             <LineChart
                 data={chartData}
                 width={screenWidth - 32}
-                height={220}
+                height={240}
                 chartConfig={{
                     backgroundColor: '#ffffff',
                     backgroundGradientFrom: '#ffffff',
@@ -111,9 +140,8 @@ const MonthlyTransactionChart = ({ refreshKey }) => {
                         borderRadius: 16
                     },
                     propsForDots: {
-                        r: '5',
-                        strokeWidth: '2',
-                        stroke: '#2563EB'
+                        r: '4',
+                        strokeWidth: '2'
                     },
                     propsForBackgroundLines: {
                         strokeDasharray: '',
@@ -135,7 +163,11 @@ const MonthlyTransactionChart = ({ refreshKey }) => {
             <View style={styles.legend}>
                 <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: '#2563EB' }]} />
-                    <Text style={styles.legendText}>Consumer Sales</Text>
+                    <Text style={styles.legendText}>Sales</Text>
+                </View>
+                <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
+                    <Text style={styles.legendText}>Payments</Text>
                 </View>
             </View>
         </View>
@@ -170,23 +202,48 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666'
     },
-    totalSection: {
-        backgroundColor: '#f0f9ff',
+    statsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 16,
+        gap: 8
+    },
+    statCard: {
+        flex: 1,
+        minWidth: '30%',
         padding: 12,
         borderRadius: 8,
-        marginBottom: 16,
-        borderLeftWidth: 4,
+        borderLeftWidth: 3
+    },
+    salesCard: {
+        backgroundColor: '#eff6ff',
         borderLeftColor: '#2563EB'
     },
-    totalLabel: {
-        fontSize: 12,
+    paymentsCard: {
+        backgroundColor: '#f0fdf4',
+        borderLeftColor: '#22C55E'
+    },
+    pendingCard: {
+        backgroundColor: '#fef3c7',
+        borderLeftColor: '#f59e0b'
+    },
+    statLabel: {
+        fontSize: 10,
         color: '#666',
         marginBottom: 4
     },
-    totalAmount: {
-        fontSize: 24,
-        fontWeight: 'bold',
+    statAmount: {
+        fontSize: 16,
+        fontWeight: 'bold'
+    },
+    salesAmount: {
         color: '#2563EB'
+    },
+    paymentsAmount: {
+        color: '#22C55E'
+    },
+    pendingAmount: {
+        color: '#f59e0b'
     },
     chart: {
         marginVertical: 8,

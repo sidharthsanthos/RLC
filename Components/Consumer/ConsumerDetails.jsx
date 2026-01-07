@@ -7,6 +7,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import uuid from 'react-native-uuid';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import Invoice from '../ConsumerInvoice/Invoice';
 
 const formatDate = (isoDate) => {
     if (!isoDate) return "";
@@ -17,9 +18,12 @@ const formatDate = (isoDate) => {
     return `${day}-${month}-${year}`;
 };
 
-const TransactionItem = ({ item, index }) => {
+const TransactionItem = ({ item, index, consumer }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
+    const [showInvoice, setShowInvoice] = useState(false);
+    const [orderDetails, setOrderDetails] = useState([]);
+    const [loadingOrder, setLoadingOrder] = useState(false);
 
     useEffect(() => {
         Animated.parallel([
@@ -39,6 +43,34 @@ const TransactionItem = ({ item, index }) => {
         ]).start();
     }, []);
 
+    const fetchOrderDetails = async () => {
+        setLoadingOrder(true);
+        try {
+            const { data, error } = await supabase
+                .from('Stock_Allocations')
+                .select('*')
+                .eq('Transaction_ID', item.id);
+
+            if (error) throw error;
+            setOrderDetails(data || []);
+        } catch (err) {
+            console.error('Error fetching order details:', err);
+        } finally {
+            setLoadingOrder(false);
+        }
+    };
+
+    const handleGenerateInvoice = async () => {
+        // Only allow invoice for credit transactions (payments)
+        if (item.transaction_type !== 'credit') {
+            Alert.alert('Info', 'Invoices can only be generated for payments');
+            return;
+        }
+
+        await fetchOrderDetails();
+        setShowInvoice(true);
+    };
+
     const modeColors = {
         cash: "#FF6B6B",
         upi: "#4ECDC4",
@@ -54,27 +86,61 @@ const TransactionItem = ({ item, index }) => {
     };
 
     return (
-        <Animated.View
-            style={[
-                styles.txCard,
-                { opacity: fadeAnim, transform: [{ translateY }] }
-            ]}
-        >
-            <View style={[styles.txIconBox, { backgroundColor: modeColors[item.mode] || "#95A5A6" }]}>
-                <Ionicons name={modeIcons[item.mode] || "help-circle-outline"} size={24} color="#fff" />
-            </View>
+        <>
+            <TouchableOpacity onPress={handleGenerateInvoice} activeOpacity={0.7}>
+                <Animated.View
+                    style={[
+                        styles.txCard,
+                        { opacity: fadeAnim, transform: [{ translateY }] }
+                    ]}
+                >
+                    <View style={[styles.txIconBox, { backgroundColor: modeColors[item.mode] || "#95A5A6" }]}>
+                        <Ionicons name={modeIcons[item.mode] || "help-circle-outline"} size={24} color="#fff" />
+                    </View>
 
-            <View style={styles.txContent}>
-                <Text style={styles.txAmount}>₹{item.amount.toLocaleString()}</Text>
-                <Text style={styles.txDate}>{formatDate(item.date)}</Text>
-            </View>
+                    <View style={styles.txContent}>
+                        <Text style={styles.txAmount}>₹{item.amount.toLocaleString()}</Text>
+                        <Text style={styles.txDate}>{formatDate(item.date)}</Text>
+                    </View>
 
-            <View style={[styles.modeTag, { backgroundColor: modeColors[item.mode] || "#95A5A6" }]}>
-                <Text style={styles.modeText}>
-                    {item.mode ? item.mode.toUpperCase() : "N/A"}
-                </Text>
-            </View>
-        </Animated.View>
+                    <View style={styles.actionGroup}>
+                        <View style={[styles.modeTag, { backgroundColor: modeColors[item.mode] || "#95A5A6" }]}>
+                            <Text style={styles.modeText}>
+                                {item.mode ? item.mode.toUpperCase() : "N/A"}
+                            </Text>
+                        </View>
+                        {item.transaction_type === 'credit' && (
+                            <Ionicons name="receipt-outline" size={20} color="#FF9966" style={{ marginLeft: 8 }} />
+                        )}
+                    </View>
+                </Animated.View>
+            </TouchableOpacity>
+
+            {showInvoice && (
+                <Modal
+                    animationType="slide"
+                    transparent
+                    visible={showInvoice}
+                    onRequestClose={() => setShowInvoice(false)}
+                >
+                    <ScrollView style={styles.invoiceModalBackground}>
+                        {loadingOrder ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color="#FF9966" />
+                                <Text style={styles.loadingText}>Loading invoice...</Text>
+                            </View>
+                        ) : (
+                            <Invoice
+                                consumer={consumer}
+                                transaction={item}
+                                orderDetails={orderDetails}
+                                onClose={() => setShowInvoice(false)}
+                            />
+                        )}
+                    </ScrollView>
+                </Modal>
+            )}
+        </>
     );
 };
 
@@ -567,9 +633,11 @@ const ConsumerDetails = ({ route }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Transactions</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.seeMoreText}>See All →</Text>
-                        </TouchableOpacity>
+                        {transactions && transactions.length > 0 ? (
+                            <TouchableOpacity onPress={() => navigation.navigate('RecentTransactions', { consumerID, consumer })}>
+                                <Text style={styles.seeMoreText}>See All →</Text>
+                            </TouchableOpacity>
+                        ) : ''}
                     </View>
 
                     {transactions && transactions.length > 0 ? (
@@ -577,7 +645,7 @@ const ConsumerDetails = ({ route }) => {
                             data={transactions}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item, index }) => (
-                                <TransactionItem item={item} index={index} />
+                                <TransactionItem item={item} index={index} consumer={consumer} />
                             )}
                             ItemSeparatorComponent={() => <View style={styles.separator} />}
                             scrollEnabled={false}
@@ -601,7 +669,7 @@ const ConsumerDetails = ({ route }) => {
 };
 
 export default ConsumerDetails;
-export { OrderItem };
+export { OrderItem, TransactionItem };
 
 const styles = StyleSheet.create({
     container: {
@@ -848,6 +916,26 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "700",
         letterSpacing: 0.5,
+    },
+    actionGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    invoiceModalBackground: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 14,
+        color: '#fff',
+        fontWeight: '600',
     },
     separator: {
         height: 12,

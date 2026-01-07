@@ -1,259 +1,412 @@
-import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { StatusBar } from 'react-native';
 import { supabase } from '../../utils/supabase';
 import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 
-const EditOrder = ({route}) => {
+const EditOrder = ({route, navigation}) => {
     const {itemID}=route.params;
-    const [order,setOrder]=useState(null);
+    const [allocation, setAllocation]=useState(null);
+    const [stockItem, setStockItem] = useState(null);
+    const [transaction, setTransaction] = useState(null);
+    const [consumer, setConsumer] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const [quality,setQuality]=useState('');
-    const [odate,setODate]=useState(null);
-    const [quantity,setQuantity]=useState('');
-    const [totalBags,setTotalBags]=useState('');
-    const [netAmount,setNetAmount]=useState('');
-    const [totalAmount,setTotal]=useState(0);
-    const [notes,setNotes]=useState('');
-    const [showdatepicker,setShowDatePicker]=useState(false);
-    const [lastEdited,setLastEdited]=useState(null);
+    const [quantity, setQuantity] = useState('');
+    const [bags, setBags] = useState('');
+    const [rate, setRate] = useState('');
+    const [amount, setAmount] = useState(0);
 
-    const qualitySet=[
-        "Good",
-        "Average",
-        "Bad"
-    ];
-    
-    
-    const fetchOrder=async ()=>{
-        try{
-            const {data,error}=await supabase
-               .from('Stock')
-               .select('*')
-               .eq('id',itemID);
-
-            if(error){
-                console.error('Fetching Error Occured',error.message);
-                return;
-            }
-
-            const o=data[0];
-            setOrder(o);
-            console.log(data[0]);
+    const fetchOrderData = async () => {
+        try {
+            setLoading(true);
             
+            // Fetch allocation
+            const { data: allocData, error: allocError } = await supabase
+                .from('Stock_Allocations')
+                .select('*')
+                .eq('Transaction_ID', itemID)
+                .single();
 
-            setODate(o.Date?new Date(o.Date):null);
-            setQuality(o.Quality);
-            setQuantity(String(o.Net_Quantity));
-            setTotalBags(String(o.Total_Bags));
-            setNetAmount(String(o.Net_Amount));
-            setTotal(o.Total_Amount);
-            setNotes(o.Notes);
+            if (allocError) throw allocError;
+            setAllocation(allocData);
 
-        }catch(err){
-            console.error('Unexpected Error Occured',err);
+            // Fetch related stock item
+            const { data: stockData, error: stockError } = await supabase
+                .from('Stock')
+                .select('*')
+                .eq('id', allocData.Stock_ID)
+                .single();
+
+            if (stockError) throw stockError;
+            setStockItem(stockData);
+
+            // Fetch transaction
+            const { data: txData, error: txError } = await supabase
+                .from('Transactions')
+                .select('*')
+                .eq('id', allocData.Transaction_ID)
+                .single();
+
+            if (txError) throw txError;
+            setTransaction(txData);
+
+            // Fetch consumer
+            const { data: consumerData, error: consumerError } = await supabase
+                .from('Consumers')
+                .select('*')
+                .eq('id', txData.ref_id)
+                .single();
+
+            if (consumerError) throw consumerError;
+            setConsumer(consumerData);
+
+            // Set form values
+            setQuantity(String(allocData.Quantity_Allocated));
+            setBags(String(allocData.Bags_Allocated));
+            setRate(String(allocData.Amount / allocData.Quantity_Allocated));
+            setAmount(allocData.Amount);
+
+        } catch (err) {
+            console.error('Error fetching order data:', err);
+            Alert.alert('Error', 'Failed to load order details');
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
-    useEffect(()=>{
-        fetchOrder();
-    },[]);
+    useEffect(() => {
+        fetchOrderData();
+    }, []);
 
-    useEffect(()=>{
-        const q=parseInt(quantity);
-        const rate=parseInt(netAmount);
+    useEffect(() => {
+        const q = Number(quantity) || 0;
+        const r = Number(rate) || 0;
+        setAmount(q * r);
+    }, [quantity, rate]);
 
-        if(!isNaN(q) && !isNaN(rate)){
-            setTotal(q*rate);
-        }else{
-            setTotal(0);
-        }
-    },[quantity,netAmount]);
-
-    useEffect(()=>{
-        if(order?.Unit_Type===1){
-            if(lastEdited==='quantity'){
-                setTotalBags(quantity);
-            }else if(lastEdited==='totalBags'){
-                setQuantity(totalBags);
-            }
-        }
-    },[quantity,totalBags]);
-
-    const normalize=(v)=>
-        v===null||v===undefined?"":String(v).trim();
-
-    const normalizeDate=(value)=>{
-        if(!value) return "";
-        return new Date(value).toISOString().split('T')[0];
-    }
-
-    const updateOrder=async ()=>{
-        
-        if(!order) return;
-
-        let updateFields={};
-
-        if(normalize(quality) !== normalize(order.Quality)) 
-            updateFields.Quality = quality;
-
-        if(normalizeDate(odate) !== normalizeDate(order.Date)) 
-            updateFields.Date=odate;
-
-        if(Number(quantity) !== Number(order.Net_Quantity)) 
-            updateFields.Net_Quantity=quantity;
-
-        if(Number(totalBags) !== Number(order.Total_Bags)) 
-            updateFields.Total_Bags=totalBags;
-
-        if(Number(netAmount) !== Number(order.Net_Amount)) 
-            updateFields.Net_Amount=netAmount;
-
-        if(Number(totalAmount) !== Number(order.Total_Amount)) 
-            updateFields.Total_Amount=totalAmount;
-
-        if(normalize(notes) !== normalize(order.Notes)) 
-            updateFields.Notes=notes;
-
-        console.log('fields updated: ',updateFields);
-
-
-        if(Object.keys(updateFields).length === 0){            
-            alert("No Changes to Update");
+    const updateOrder = async () => {
+        if (!allocation || !stockItem || !transaction || !consumer) {
+            Alert.alert('Error', 'Missing required data');
             return;
         }
 
-        try{
-            const {error}=await supabase
-               .from('Stock')
-               .update(updateFields)
-               .eq('id',itemID)
+        const newQuantity = Number(quantity) || 0;
+        const newBags = Number(bags) || 0;
+        const newRate = Number(rate) || 0;
+        const newAmount = newQuantity * newRate;
 
-            if(error){
-                alert('Update Failed'+error.message);
-                return;
-            }else{
-                alert('Order Updated Successfully');
-            }
-        }catch(err){
-            alert('Unexpected Error Occured '+err)
+        if (newQuantity <= 0) {
+            Alert.alert('Error', 'Quantity must be greater than 0');
+            return;
         }
+
+        const oldQuantity = allocation.Quantity_Allocated;
+        const oldBags = allocation.Bags_Allocated;
+        const oldAmount = allocation.Amount;
+
+        // Calculate differences
+        const quantityDiff = newQuantity - oldQuantity;
+        const bagsDiff = newBags - oldBags;
+        const amountDiff = newAmount - oldAmount;
+
+        // Check if new quantity exceeds available stock
+        const availableStock = stockItem.Remaining_Quantity + oldQuantity;
+        if (newQuantity > availableStock) {
+            Alert.alert('Error', `Only ${availableStock} units available`);
+            return;
+        }
+
+        try {
+            // 1. Update Stock_Allocations
+            const { error: allocError } = await supabase
+                .from('Stock_Allocations')
+                .update({
+                    Quantity_Allocated: newQuantity,
+                    Bags_Allocated: newBags,
+                    Amount: newAmount
+                })
+                .eq('Transaction_ID', itemID);
+
+            if (allocError) throw allocError;
+
+            // 2. Update Stock remaining quantities
+            const newRemainingQty = stockItem.Remaining_Quantity - quantityDiff;
+            const newRemainingBags = stockItem.Remaining_Bags - bagsDiff;
+
+            const { error: stockError } = await supabase
+                .from('Stock')
+                .update({
+                    Remaining_Quantity: newRemainingQty,
+                    Remaining_Bags: newRemainingBags
+                })
+                .eq('id', stockItem.id);
+
+            if (stockError) throw stockError;
+
+            // 3. Update Transaction amount
+            const newTransactionAmount = transaction.amount + amountDiff;
+            const { error: txError } = await supabase
+                .from('Transactions')
+                .update({
+                    amount: newTransactionAmount
+                })
+                .eq('id', transaction.id);
+
+            if (txError) throw txError;
+
+            // 4. Update Consumer pending amount
+            const newPendingAmount = consumer.Pending_Amount + amountDiff;
+            const { error: consumerError } = await supabase
+                .from('Consumers')
+                .update({
+                    Pending_Amount: newPendingAmount
+                })
+                .eq('id', consumer.id);
+
+            if (consumerError) throw consumerError;
+
+            Alert.alert('Success', 'Order updated successfully', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+            ]);
+
+        } catch (err) {
+            console.error('Update error:', err);
+            Alert.alert('Error', err.message || 'Failed to update order');
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#07c3f7" />
+                <Text style={styles.loadingText}>Loading order details...</Text>
+            </View>
+        );
     }
 
+    if (!allocation || !stockItem) {
+        return (
+            <View style={styles.loadingContainer}>
+                <Text style={styles.errorText}>Failed to load order data</Text>
+            </View>
+        );
+    }
 
     return (
-        <View style={styles.container}>
-            <Text>EditOrder: {itemID?itemID:'item ID not available'}</Text>
-            <TouchableOpacity
-               style={[styles.input,{justifyContent:'center'}]}
-               onPress={()=>setShowDatePicker(true)}
-            >
-                <Text>
-                    {odate?odate.toDateString():'Select Order Date'}
+        <ScrollView style={styles.container}>
+            <View style={styles.header}>
+                <Ionicons name="create-outline" size={28} color="#07c3f7" />
+                <Text style={styles.headerText}>Edit Order</Text>
+            </View>
+
+            {/* Order Info Card */}
+            <View style={styles.infoCard}>
+                <Text style={styles.infoLabel}>Order ID: {itemID}</Text>
+                <Text style={styles.infoLabel}>Stock ID: {stockItem.id}</Text>
+                <Text style={styles.infoLabel}>
+                    Available Stock: {stockItem.Remaining_Quantity + allocation.Quantity_Allocated} units
                 </Text>
-            </TouchableOpacity>
+                <Text style={styles.infoLabel}>Quality: {stockItem.Quality}</Text>
+            </View>
 
-            {showdatepicker && (
-                <DateTimePicker
-                   value={odate||new Date()}
-                   mode='date'
-                   display='calendar'
-                   onChange={(event,selectedDate)=>{
-                    setShowDatePicker(false);
-                    if(selectedDate){
-                        setODate(selectedDate)
-                    }
-                   }}
+            {/* Form Fields */}
+            <View style={styles.formSection}>
+                <Text style={styles.label}>Quantity</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder='Enter Quantity'
+                    keyboardType='numeric'
+                    value={quantity}
+                    onChangeText={setQuantity}
                 />
-            ) }
+                <Text style={styles.hint}>
+                    Max: {stockItem.Remaining_Quantity + allocation.Quantity_Allocated}
+                </Text>
+            </View>
 
-            <Picker
-               selectedValue={quality}
-               onValueChange={(v)=>setQuality(v)}
-            >
-                <Picker.Item label='Select Quality' value=''/>
-                {qualitySet.map((q)=>(
-                    <Picker.Item key={q} label={q} value={q}/>
-                ))}
-            </Picker>
+            <View style={styles.formSection}>
+                <Text style={styles.label}>Bags</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder='Enter Bags'
+                    keyboardType='numeric'
+                    value={bags}
+                    onChangeText={setBags}
+                />
+            </View>
 
-            <TextInput
-               style={styles.input}
-               placeholder='Quantity'
-               keyboardType='numeric'
-               value={quantity}
-               onChangeText={(v)=>{
-                setLastEdited('quantity');
-                setQuantity(v);
-               }}
-            />
+            <View style={styles.formSection}>
+                <Text style={styles.label}>Rate per Unit (₹)</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder='Enter Rate'
+                    keyboardType='numeric'
+                    value={rate}
+                    onChangeText={setRate}
+                />
+                <Text style={styles.hint}>Original Rate: ₹{stockItem.Net_Amount}</Text>
+            </View>
 
-            <TextInput
-               style={styles.input}
-               placeholder='Total Bags'
-               keyboardType='numeric'
-               value={totalBags}
-               onChangeText={(v)=>{
-                setLastEdited('totalBags');
-                setTotalBags(v);
-               }}
-            />
-
-            <TextInput
-               style={styles.input}
-               placeholder='Net Amount'
-               keyboardType='numeric'
-               value={netAmount}
-               onChangeText={setNetAmount}
-            />
-
-            <TextInput
-               style={[styles.input, {backgroundColor:'#eee'}]}
-               placeholder='Total Amount'
-               value={totalAmount.toString()}
-               editable={false}
-            />
-
-            <TextInput
-               style={[styles.input, {backgroundColor:'#eee'}]}
-               placeholder='Additional Notes'
-               value={notes}
-               onChangeText={setNotes}
-            />
+            <View style={styles.formSection}>
+                <Text style={styles.label}>Total Amount</Text>
+                <View style={styles.amountDisplay}>
+                    <Text style={styles.amountText}>₹{amount.toLocaleString()}</Text>
+                </View>
+                <Text style={styles.hint}>
+                    Previous: ₹{allocation.Amount.toLocaleString()} 
+                    {amount !== allocation.Amount && (
+                        <Text style={amount > allocation.Amount ? styles.increase : styles.decrease}>
+                            {' '}({amount > allocation.Amount ? '+' : ''}
+                            ₹{(amount - allocation.Amount).toLocaleString()})
+                        </Text>
+                    )}
+                </Text>
+            </View>
 
             <TouchableOpacity style={styles.btn} onPress={updateOrder}>
+                <Ionicons name="checkmark-circle" size={20} color="#fff" style={{marginRight: 8}} />
                 <Text style={styles.btnText}>Update Order</Text>
             </TouchableOpacity>
-        </View>
+
+            <TouchableOpacity 
+                style={styles.cancelBtn} 
+                onPress={() => navigation.goBack()}
+            >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+        </ScrollView>
     )
 }
 
 export default EditOrder
 
 const styles = StyleSheet.create({
-    container:{
-        display:'flex',
-        paddingTop:Platform.OS==='android'?StatusBar.currentHeight:0,
-        margin:0,
+    container: {
+        flex: 1,
+        padding: 16,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 10,
+        backgroundColor: '#f9f9f9'
     },
-    input:{
-        backgroundColor:'#fff',
-        borderWidth:1,
-        borderColor:'#ccc',
-        padding:12,
-        marginVertical:6,
-        borderRadius:6,
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40
     },
-    btn:{
-        backgroundColor:'#07c3f7',
-        padding:14,
-        borderRadius:8,
-        marginTop:15,
+    loadingText: {
+        marginTop: 12,
+        fontSize: 14,
+        color: '#666'
     },
-    btnText:{
-        color:'white',
-        textAlign:'center',
-        fontWeight:'bold',
+    errorText: {
+        fontSize: 16,
+        color: '#FF6B6B'
     },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+        gap: 10
+    },
+    headerText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333'
+    },
+    infoCard: {
+        backgroundColor: '#fff',
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderLeftWidth: 4,
+        borderLeftColor: '#07c3f7',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 }
+    },
+    infoLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 6
+    },
+    formSection: {
+        marginBottom: 16
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 8
+    },
+    input: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        padding: 14,
+        borderRadius: 8,
+        fontSize: 16
+    },
+    hint: {
+        fontSize: 12,
+        color: '#999',
+        marginTop: 4
+    },
+    increase: {
+        color: '#FF6B6B',
+        fontWeight: '600'
+    },
+    decrease: {
+        color: '#51CF66',
+        fontWeight: '600'
+    },
+    amountDisplay: {
+        backgroundColor: '#f0f9ff',
+        borderWidth: 2,
+        borderColor: '#07c3f7',
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center'
+    },
+    amountText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#07c3f7'
+    },
+    btn: {
+        backgroundColor: '#07c3f7',
+        padding: 16,
+        borderRadius: 8,
+        marginTop: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 3,
+        shadowColor: '#07c3f7',
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 }
+    },
+    btnText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16
+    },
+    cancelBtn: {
+        backgroundColor: 'transparent',
+        padding: 16,
+        borderRadius: 8,
+        marginTop: 10,
+        borderWidth: 2,
+        borderColor: '#ddd',
+        alignItems: 'center'
+    },
+    cancelBtnText: {
+        color: '#666',
+        fontWeight: '600',
+        fontSize: 16
+    }
 })

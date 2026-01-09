@@ -52,127 +52,127 @@ const Invoice = ({ consumer, transaction, orderDetails, onClose }) => {
   //   }
   // };
 
-  // const generateReceiptHTML = ({
-  //   businessName,
-  //   receiptNo,
-  //   date,
-  //   customerName,
-  //   customerPhone,
-  //   amountPaid,
-  //   paymentMode,
-  //   referenceNo,
-  //   remarks
-  // }) => {
-  //   return `
-  //   <html>
-  //     <head>
-  //       <style>
-  //         @page {
-  //           size: A4;
-  //           margin: 20mm;
-  //         }
-
-  //         body {
-  //           font-family: Arial, sans-serif;
-  //           font-size: 12px;
-  //           color: #000;
-  //         }
-
-  //         .header {
-  //           display: flex;
-  //           justify-content: space-between;
-  //           border-bottom: 2px solid #000;
-  //           padding-bottom: 10px;
-  //           margin-bottom: 15px;
-  //         }
-
-  //         .business-name {
-  //           font-size: 18px;
-  //           font-weight: bold;
-  //         }
-
-  //         .doc-title {
-  //           font-size: 16px;
-  //           font-weight: bold;
-  //           text-transform: uppercase;
-  //         }
-
-  //         .row {
-  //           display: flex;
-  //           justify-content: space-between;
-  //         }
-
-  //         .section {
-  //           margin-bottom: 15px;
-  //         }
-
-  //         .label {
-  //           font-weight: bold;
-  //         }
-
-  //         .amount-box {
-  //           border: 2px solid #000;
-  //           padding: 14px;
-  //           text-align: center;
-  //           font-size: 16px;
-  //           font-weight: bold;
-  //           margin: 20px 0;
-  //         }
-
-  //         .footer {
-  //           margin-top: 30px;
-  //           padding-top: 10px;
-  //           border-top: 1px solid #ccc;
-  //           font-size: 10px;
-  //           text-align: center;
-  //           color: #555;
-  //         }
-  //       </style>
-  //     </head>
-
-  //     <body>
-
-  //       <div class="header">
-  //         <div class="business-name">${businessName}</div>
-  //         <div class="doc-title">Payment Receipt</div>
-  //       </div>
-
-  //       <div class="section row">
-  //         <div><span class="label">Receipt No:</span> ${receiptNo}</div>
-  //         <div><span class="label">Date:</span> ${date}</div>
-  //       </div>
-
-  //       <div class="section">
-  //         <div class="label">Received From:</div>
-  //         <div>${customerName}</div>
-  //         <div>Phone: ${customerPhone}</div>
-  //       </div>
-
-  //       <div class="amount-box">
-  //         Amount Received: ₹${amountPaid}
-  //       </div>
-
-  //       <div class="section row">
-  //         <div><span class="label">Payment Mode:</span> ${paymentMode}</div>
-  //         <div><span class="label">Reference No:</span> ${referenceNo || '-'}</div>
-  //       </div>
-
-  //       <div class="section">
-  //         <span class="label">Remarks:</span><br/>
-  //         ${remarks}
-  //       </div>
-
-  //       <div class="footer">
-  //         This is a system-generated payment receipt.<br/>
-  //         Thank you for your business.
-  //       </div>
-
-  //     </body>
-  //   </html>
-  //   `;
-  // };
-
   const generateReceiptHTML = ({
+    businessName,
+    receiptNo,
+    date,
+    customerName,
+    customerPhone,
+    amountPaid,
+    paymentMode,
+    referenceNo,
+    remarks
+  }) => {
+    return `
+    <html>
+      <head>
+        <style>
+          @page {
+            size: A4;
+            margin: 20mm;
+          }
+
+          body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+          }
+
+          .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+          }
+
+          .business-name {
+            font-size: 18px;
+            font-weight: bold;
+          }
+
+          .doc-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+          }
+
+          .row {
+            display: flex;
+            justify-content: space-between;
+          }
+
+          .section {
+            margin-bottom: 15px;
+          }
+
+          .label {
+            font-weight: bold;
+          }
+
+          .amount-box {
+            border: 2px solid #000;
+            padding: 14px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0;
+          }
+
+          .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+            font-size: 10px;
+            text-align: center;
+            color: #555;
+          }
+        </style>
+      </head>
+
+      <body>
+
+        <div class="header">
+          <div class="business-name">${businessName}</div>
+          <div class="doc-title">Payment Receipt</div>
+        </div>
+
+        <div class="section row">
+          <div><span class="label">Receipt No:</span> ${receiptNo}</div>
+          <div><span class="label">Date:</span> ${date}</div>
+        </div>
+
+        <div class="section">
+          <div class="label">Received From:</div>
+          <div>${customerName}</div>
+          <div>Phone: ${customerPhone}</div>
+        </div>
+
+        <div class="amount-box">
+          Amount Received: ₹${amountPaid}
+        </div>
+
+        <div class="section row">
+          <div><span class="label">Payment Mode:</span> ${paymentMode}</div>
+          <div><span class="label">Reference No:</span> ${referenceNo || '-'}</div>
+        </div>
+
+        <div class="section">
+          <span class="label">Remarks:</span><br/>
+          ${remarks}
+        </div>
+
+        <div class="footer">
+          This is a system-generated payment receipt.<br/>
+          Thank you for your business.
+        </div>
+
+      </body>
+    </html>
+    `;
+  };
+
+  const generateReceiptHTML2 = ({
     businessName,
     businessLogo64, // URL or base64 image string
     businessAddress,

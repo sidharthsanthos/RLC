@@ -5,3 +5,10 @@
 [ Pending by Supplier Chart ]
 [ Top Pending Suppliers ]
 [ Recent Transactions ]
+
+
+//Main Dashboard Idea
+
+[A Box Showing current inventory status of the day]
+[Top 3 suppliers of the day - Top 3 consumers of the day]
+[A graph between days or months to depict profit and loss]

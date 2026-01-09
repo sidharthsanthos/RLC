@@ -17,8 +17,7 @@ import StockValue from '../SupplierDashboard/StockValue';
 import AddSupplier from './AddSupplier';
 import AddOrder from './AddOrder';
 import AddPayment from './AddPayment';
-// import AddOrder from './AddOrder';
-// import AddPayment from './AddPayment';
+
 
 const Stack=createStackNavigator();
 

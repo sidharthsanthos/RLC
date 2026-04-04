@@ -12,3 +12,7 @@
 [A Box Showing current inventory status of the day]
 [Top 3 suppliers of the day - Top 3 consumers of the day]
 [A graph between days or months to depict profit and loss]
+
+
+errors or bugs to fix
+date in us format

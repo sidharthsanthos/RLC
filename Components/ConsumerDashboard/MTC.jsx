@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Dimensions, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Dimensions, StyleSheet, ActivityIndicator, Platform, StatusBar } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { supabase } from '../../utils/supabase';
 
@@ -183,6 +183,7 @@ const styles = StyleSheet.create({
         marginVertical: 12,
         borderRadius: 16,
         padding: 16,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 16 : 16,
         elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },

@@ -1,5 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, StatusBar } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Index from './Components/Index';
 import { NavigationContainer } from '@react-navigation/native';
@@ -11,15 +10,18 @@ const Stack=createStackNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{headerShown:false}}>
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{headerShown:false}}>
         <Stack.Screen name='Index' component={Index} />
         <Stack.Screen name='Supplier' component={Supplier} />
         <Stack.Screen name='Consumer'
         component={Consumer} />
         {/* <Stack.Screen name='MainHome' component={MainHome}/> */}
-      </Stack.Navigator>
-    </NavigationContainer>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </>
   );
 }
 

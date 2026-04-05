@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, ScrollView } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { supabase } from '../../utils/supabase';
@@ -9,19 +9,12 @@ const AddPayment = () => {
     const [suppliers,setSuppliers]=useState([]);
     const [selectedSupplier,setSelectedSupplier]=useState(null);
     const [paymentData,setPaymentData]=useState({
-        amount:0,
+        amount:'',
         type:'debit',
         mode:'',
         remarks:''
     });
     const [alert,setAlert]=useState({type:'',message:''});
-
-    const initialData={
-        amount:0,
-        type:'debit',
-        mode:'',
-        remarks:''
-    }
 
     const transactionMode=[
         'UPI',
@@ -52,35 +45,28 @@ const AddPayment = () => {
 
     const handleInput=(field,value)=>{
         let updated={...paymentData};
-
         updated[field]=value;
-
         setPaymentData(updated);
     };
 
     const savePayment=async ()=>{
         const today=new Date().toISOString().split('T')[0];
 
-        console.log({
-            'ref_type':'supplier',
-            'ref_ID':selectedSupplier?.id,
-            'amount':paymentData.amount,
-            'transactionType':paymentData.type,
-            'mode':paymentData.mode,
-            'date':today,
-        });
-
-        // const isDefault=JSON.stringify(paymentData)===JSON.stringify(initialData)
-        const amt=paymentData.amount;
+        const amt=Number(paymentData.amount);
         const mode=paymentData.mode;
-        // console.log('Amount:',amt);
-        // return;
-        
 
-        if(amt==0){            
+        if(!selectedSupplier){
+            setAlert({type:'error',message:'Please Select a Supplier'})
+            setTimeout(()=>{
+                setAlert({type:'',message:''});
+                return;
+            },5000);
+            return;
+        }
+
+        if(amt===0 || !paymentData.amount){            
             setAlert({type:'error',message:'Please Enter Amount'})
-            console.log(alert);
-            
+
             setTimeout(()=>{
                 setAlert({type:'',message:''});
                 return;
@@ -97,11 +83,10 @@ const AddPayment = () => {
             return;
         }
 
-        const newPending=selectedSupplier?.Pending_Amount-amt;
-        console.log(newPending);
+        const newPending=Number(selectedSupplier?.Pending_Amount)-amt;
 
         if(newPending<0){
-            setAlert({type:'error',message:'Please Enter Valid Amount'})
+            setAlert({type:'error',message:'Payment exceeds pending amount'})
             setTimeout(()=>{
                 setAlert({type:'',message:''});
                 return;
@@ -116,7 +101,7 @@ const AddPayment = () => {
                .insert({
                     ref_type:'supplier',
                     ref_id:selectedSupplier?.id,
-                    amount:paymentData.amount,
+                    amount:amt,
                     transaction_type:paymentData.type,
                     mode:paymentData.mode.toLowerCase(),
                     date:today,
@@ -146,13 +131,13 @@ const AddPayment = () => {
                     return;
                 }
 
-                setAlert({type:'success', message:'Transaction Saved Successfully'})
+                setAlert({type:'success', message:'Payment Saved Successfully'})
                 setTimeout(()=>{
                     setAlert({type:'',message:''})
                     fetchSuppliers();
                     setSelectedSupplier(null);
                     setPaymentData({
-                        amount:0,
+                        amount:'',
                         type:'debit',
                         mode:'',
                         remarks:''
@@ -160,11 +145,10 @@ const AddPayment = () => {
                     return;
                 },3000);
                
-
                console.log('Payment Logged Successfully');
         }catch(err){
             console.error('Unexpected Error Occured',err);
-            setAlert({type:'error',message:err})
+            setAlert({type:'error',message:err.message})
             setTimeout(()=>{
                 setAlert({type:'',message:''})
                 return;
@@ -173,10 +157,19 @@ const AddPayment = () => {
     }
 
     return (
-        <View style={styles.container}>
-
-        {/* Alert Message */}
-        {alert.message !== '' && (
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+            <ScrollView 
+                style={styles.container}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Alert Message */}
+                {alert.message !== '' && (
             <View style={styles.alertWrap}>
             <MessageBox type={alert.type} message={alert.message} />
             </View>
@@ -271,7 +264,8 @@ const AddPayment = () => {
             </View>
         )}
 
-    </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
 
@@ -280,9 +274,12 @@ export default AddPayment
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: "#f5f7fa",
-    paddingTop:Platform.OS==='android'?StatusBar.currentHeight:0
+  },
+
+  scrollContent: {
+    padding: 16,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 16 : 16,
   },
 
   heading: {

@@ -1,5 +1,6 @@
-import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, ScrollView } from 'react-native'
 import React, { useState } from 'react'
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -184,118 +185,308 @@ const SOrder = () => {
     }
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+            <ScrollView 
+                style={styles.container}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
 
             {alert.message!=='' && (
-                <MessageBox type={alert.type} message={alert.message}/>
+                <View style={styles.alertWrap}>
+                    <MessageBox type={alert.type} message={alert.message}/>
+                </View>
             )}
 
-            <Text>SOrder</Text>
-            <Text>Name: {supplier?supplier.Name:''}</Text>
+            <Text style={styles.header}>Add Supplier Order</Text>
 
-            <TouchableOpacity
-               style={[styles.input,{justifyContent:'center'}]}
-               onPress={()=>setShowDatePicker(true)}
-            >
-                <Text>
-                    {oDate?oDate.toDateString():'Select Order Date'}
+            {/* Supplier Info Card */}
+            <View style={styles.card}>
+                <View style={styles.supplierInfo}>
+                    <Ionicons name="person-circle-outline" size={24} color="#51CF66" />
+                    <View style={styles.supplierDetails}>
+                        <Text style={styles.supplierName}>{supplier?.Name || 'Unknown'}</Text>
+                        <Text style={styles.supplierType}>
+                            {supplier?.Supply_Type === 1 ? 'Bags' : 'Kgs'}
+                        </Text>
+                    </View>
+                </View>
+            </View>
+
+            {/* Order Details Card */}
+            <View style={styles.card}>
+                <Text style={styles.cardTitle}>Order Details</Text>
+                
+                {/* Date Picker */}
+                <Text style={styles.label}>Order Date</Text>
+                <TouchableOpacity
+                    style={styles.dateInput}
+                    onPress={()=>setShowDatePicker(true)}
+                >
+                    <Ionicons name="calendar-outline" size={18} color="#666" />
+                    <Text style={styles.dateText}>
+                        {oDate ? oDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Select Order Date'}
+                    </Text>
+                </TouchableOpacity>
+
+                {showdatepicker && (
+                    <DateTimePicker
+                       value={oDate}
+                       mode='date'
+                       display='calendar'
+                       onChange={(event,selectedDate)=>{
+                        setShowDatePicker(false);
+                        if(selectedDate){
+                            setODate(selectedDate)
+                        }
+                       }}
+                    />
+                )}
+
+                {/* Quality Picker */}
+                <Text style={styles.label}>Quality</Text>
+                <View style={styles.pickerWrap}>
+                    <Picker
+                       selectedValue={orderData.quality}
+                       onValueChange={(v)=>handleInput("quality",v)}
+                    >
+                        <Picker.Item label='Select Quality' value=''/>
+                        {qualitySet.map((q)=>(
+                            <Picker.Item key={q} label={q} value={q}/>
+                        ))}
+                    </Picker>
+                </View>
+
+                {/* Quantity Input */}
+                <Text style={styles.label}>
+                    Quantity {supplier?.Supply_Type === 1 ? '(Bags)' : '(Kg)'}
                 </Text>
-            </TouchableOpacity>
-
-            {showdatepicker && (
-                <DateTimePicker
-                   value={oDate}
-                   mode='date'
-                   display='calendar'
-                   onChange={(event,selectedDate)=>{
-                    setShowDatePicker(false);
-                    if(selectedDate){
-                        setODate(selectedDate)
-                    }
-                   }}
+                <TextInput
+                   style={styles.input}
+                   placeholder={supplier?.Supply_Type === 1 ? 'Enter quantity in bags' : 'Enter quantity in kg'}
+                   keyboardType='numeric'
+                   value={orderData.quantity.toString()}
+                   onChangeText={(v)=>handleInput('quantity',v)}
                 />
-            ) }
 
-            <Picker
-               selectedValue={orderData.quality}
-               onValueChange={(v)=>handleInput("quality",v)}
-            >
-                <Picker.Item label='Select Quality' value=''/>
-                {qualitySet.map((q)=>(
-                    <Picker.Item key={q} label={q} value={q}/>
-                ))}
-            </Picker>
+                {/* Total Bags */}
+                {supplier?.Supply_Type !== 1 && (
+                    <>
+                        <Text style={styles.label}>Total Bags</Text>
+                        <TextInput
+                           style={styles.input}
+                           placeholder='Enter number of bags'
+                           keyboardType='numeric'
+                           value={orderData.totalBags.toString()}
+                           onChangeText={(v)=>handleInput('totalBags',v)}
+                        />
+                    </>
+                )}
 
-            <TextInput
-               style={styles.input}
-               placeholder='Quantity'
-               keyboardType='numeric'
-               value={orderData.quantity}
-               onChangeText={(v)=>handleInput('quantity',v)}
-            />
+                {/* Net Amount per unit */}
+                <Text style={styles.label}>Rate per {supplier?.Supply_Type === 1 ? 'Bag' : 'Kg'} (₹)</Text>
+                <TextInput
+                   style={styles.input}
+                   placeholder='Enter rate'
+                   keyboardType='numeric'
+                   value={orderData.netAmount.toString()}
+                   onChangeText={(v)=>handleInput('netAmount',v)}
+                />
 
-            <TextInput
-               style={styles.input}
-               placeholder='Total Bags'
-               keyboardType='numeric'
-               value={orderData.totalBags}
-               onChangeText={(v)=>handleInput('totalBags',v)}
-            />
+                {/* Total Amount - Calculated */}
+                <View style={styles.totalAmountBox}>
+                    <Text style={styles.totalLabel}>Total Amount</Text>
+                    <Text style={styles.totalValue}>₹{orderData.totalAmount.toLocaleString()}</Text>
+                </View>
 
-            <TextInput
-               style={styles.input}
-               placeholder='Net Amount'
-               keyboardType='numeric'
-               value={orderData.netAmount}
-               onChangeText={(v)=>handleInput('netAmount',v)}
-            />
+                {/* Notes */}
+                <Text style={styles.label}>Additional Notes (Optional)</Text>
+                <TextInput
+                   style={styles.textArea}
+                   placeholder='Add any notes about this order...'
+                   value={orderData.notes}
+                   onChangeText={(v)=>handleInput('notes',v)}
+                   multiline
+                   numberOfLines={3}
+                />
+            </View>
 
-            <TextInput
-               style={[styles.input, {backgroundColor:'#eee'}]}
-               placeholder='Total Amount'
-               value={orderData.totalAmount.toString()}
-               editable={false}
-            />
-
-            <TextInput
-               style={[styles.input, {backgroundColor:'#eee'}]}
-               placeholder='Additional Notes'
-               value={orderData.notes}
-               onChangeText={(v)=>handleInput('notes',v)}
-            />
-
+            {/* Save Button */}
             <TouchableOpacity style={styles.btn} onPress={saveOrder}>
+                <Ionicons name="checkmark-circle" size={20} color="#fff" style={{marginRight: 8}} />
                 <Text style={styles.btnText}>Save Order</Text>
             </TouchableOpacity>
-        </View>
+
+            </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
 
 export default SOrder
 
 const styles = StyleSheet.create({
-    container:{
-        display:'flex',
-        paddingTop:Platform.OS==='android'?StatusBar.currentHeight:0,
-        margin:0,
+    container: {
+        flex: 1,
+        backgroundColor: "#f5f7fa",
     },
-    input:{
-        backgroundColor:'#fff',
-        borderWidth:1,
-        borderColor:'#ccc',
-        padding:12,
-        marginVertical:6,
-        borderRadius:6,
+    
+    scrollContent: {
+        padding: 16,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 16 : 16,
     },
-    btn:{
-        backgroundColor:'#07c3f7',
-        padding:14,
-        borderRadius:8,
-        marginTop:15,
+    
+    alertWrap: {
+        marginBottom: 12,
     },
-    btnText:{
-        color:'white',
-        textAlign:'center',
-        fontWeight:'bold',
+    
+    header: {
+        fontSize: 22,
+        fontWeight: "700",
+        color: "#333",
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    
+    card: {
+        backgroundColor: "#fff",
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 16,
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+    },
+    
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#333",
+        marginBottom: 12,
+    },
+    
+    supplierInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    
+    supplierDetails: {
+        flex: 1,
+    },
+    
+    supplierName: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#333",
+        marginBottom: 2,
+    },
+    
+    supplierType: {
+        fontSize: 13,
+        color: "#666",
+        fontWeight: '500',
+    },
+    
+    label: {
+        fontSize: 14,
+        fontWeight: "600",
+        marginBottom: 6,
+        marginTop: 12,
+        color: "#444",
+    },
+    
+    input: {
+        backgroundColor: "#f9f9f9",
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderRadius: 8,
+        fontSize: 15,
+        borderWidth: 1,
+        borderColor: "#ddd",
+    },
+    
+    pickerWrap: {
+        backgroundColor: "#f9f9f9",
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#ddd",
+    },
+    
+    dateInput: {
+        backgroundColor: "#f9f9f9",
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#ddd",
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    
+    dateText: {
+        fontSize: 15,
+        color: "#333",
+    },
+    
+    textArea: {
+        backgroundColor: "#f9f9f9",
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderRadius: 8,
+        fontSize: 15,
+        height: 80,
+        textAlignVertical: "top",
+        borderWidth: 1,
+        borderColor: "#ddd",
+    },
+    
+    totalAmountBox: {
+        marginTop: 16,
+        padding: 14,
+        backgroundColor: '#E6F7FF',
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#51CF66',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    
+    totalLabel: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#333",
+    },
+    
+    totalValue: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#51CF66",
+    },
+    
+    btn: {
+        backgroundColor: "#51CF66",
+        paddingVertical: 14,
+        borderRadius: 8,
+        alignItems: "center",
+        marginTop: 10,
+        marginBottom: 20,
+        elevation: 2,
+        flexDirection: 'row',
+        justifyContent: 'center',
+    },
+    
+    btnText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "700",
     },
 })

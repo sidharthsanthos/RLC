@@ -1,4 +1,4 @@
-import { Settings, StyleSheet, Text, View } from 'react-native'
+import { Settings, StyleSheet, Text, View, StatusBar } from 'react-native'
 import React from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
@@ -13,6 +13,8 @@ const Tab=createBottomTabNavigator();
 
 const Index = () => {
   return (
+        <>
+        <StatusBar barStyle="dark-content" />
         <Tab.Navigator
            screenOptions={({route})=>({
             headerShown:false,
@@ -47,6 +49,7 @@ const Index = () => {
               <Tab.Screen name='Consumer' component={Consumer} options={{ tabBarStyle:{ display:'none' }}} />
               <Tab.Screen name='Settings' component={SettingsMain}/>
            </Tab.Navigator>
+        </>
   )
 }
 

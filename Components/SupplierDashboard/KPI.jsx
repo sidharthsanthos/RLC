@@ -15,14 +15,14 @@ const KPI = ({refreshKey}) => {
             const {data,error}=await supabase
                .from('dashboard_kpis')
                .select('*')
-               .single();
+               .limit(1);
 
             if(error){
                 console.error('KPI fetch error occured',error.message);
                 return;
             }
 
-            setKpi(data);
+            setKpi(data && data.length > 0 ? data[0] : null);
         }catch(err){
             console.error('Unexpected error occured',err);
         }

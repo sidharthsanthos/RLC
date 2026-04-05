@@ -8,6 +8,7 @@ import uuid from 'react-native-uuid';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import Invoice from '../ConsumerInvoice/Invoice';
+import ConsumerPaymentReceipt from '../ConsumerInvoice/ConsumerPaymentReceipt';
 
 const formatDate = (isoDate) => {
     if (!isoDate) return "";
@@ -144,13 +145,14 @@ const TransactionItem = ({ item, index, consumer }) => {
     );
 };
 
-const OrderItem = ({ item, index }) => {
+const OrderItem = ({ item, index, consumer }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
 
-    const [modalView,setModalView]=useState(false);
-    const navigation=useNavigation();
-    const itemID=item.id;
+    const [modalView, setModalView] = useState(false);
+    const [showPaymentReceipt, setShowPaymentReceipt] = useState(false);
+    const navigation = useNavigation();
+    const itemID = item.id;
 
     useEffect(() => {
         Animated.parallel([
@@ -177,7 +179,7 @@ const OrderItem = ({ item, index }) => {
 
     return (
         <>
-            <TouchableOpacity onPress={()=>setModalView(true)}>
+            <TouchableOpacity onPress={() => setModalView(true)}>
                 <Animated.View
                     style={[
                         styles.orderCard,
@@ -212,72 +214,96 @@ const OrderItem = ({ item, index }) => {
                     onRequestClose={() => setModalView(false)}
                 >
                     <View style={styles.modalBackground}>
-                    <View style={styles.reportContainer}>
+                        <View style={styles.reportContainer}>
 
-                        {/* ===== HEADER ===== */}
-                        <View style={styles.header}>
-                        <Text style={styles.title}>Sale Report</Text>
-                        <Text style={styles.subTitle}>DETAILS</Text>
+                            {/* ===== HEADER ===== */}
+                            <View style={styles.header}>
+                                <Text style={styles.title}>Sale Report</Text>
+                                <Text style={styles.subTitle}>DETAILS</Text>
+                            </View>
+
+                            {/* ===== ORDER INFO ===== */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Sale Information</Text>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Date</Text>
+                                    <Text style={styles.value}>{formatDate(item.date)}</Text>
+                                </View>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Transaction Type</Text>
+                                    <Text style={styles.value}>
+                                        {item.transaction_type ? item.transaction_type.toUpperCase() : 'DEBIT'}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/* ===== FINANCIAL DETAILS ===== */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Financial Summary</Text>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Total Amount</Text>
+                                    <Text style={styles.totalValue}>
+                                        ₹ {item.amount ? item.amount.toLocaleString() : '0'}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/* ===== NOTES ===== */}
+                            {item.remarks && (
+                                <View style={styles.section}>
+                                    <Text style={styles.sectionTitle}>Remarks</Text>
+                                    <Text style={styles.notes}>{item.remarks}</Text>
+                                </View>
+                            )}
+
+                            {/* ===== ACTION BUTTONS ===== */}
+                            <TouchableOpacity
+                                style={styles.OrderEditBtn}
+                                onPress={() => {
+                                    setModalView(false);
+                                    navigation.navigate('EditOrder', { itemID });
+                                }}
+                            >
+                                <Text style={styles.closeText}>Edit Order</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.closeBtn, { backgroundColor: '#1a6b27', marginTop: 12 }]}
+                                onPress={() => setShowPaymentReceipt(true)}
+                            >
+                                <Text style={styles.closeText}>Download Receipt</Text>
+                            </TouchableOpacity>
+
+                            {/* ===== CLOSE BUTTON ===== */}
+                            <TouchableOpacity
+                                style={styles.closeBtn}
+                                onPress={() => setModalView(false)}
+                            >
+                                <Text style={styles.closeText}>Close Report</Text>
+                            </TouchableOpacity>
+
                         </View>
-
-                        {/* ===== ORDER INFO ===== */}
-                        <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Sale Information</Text>
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Date</Text>
-                            <Text style={styles.value}>{formatDate(item.date)}</Text>
-                        </View>
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Transaction Type</Text>
-                            <Text style={styles.value}>
-                            {item.transaction_type ? item.transaction_type.toUpperCase() : 'DEBIT'}
-                            </Text>
-                        </View>
-                        </View>
-
-                        {/* ===== FINANCIAL DETAILS ===== */}
-                        <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Financial Summary</Text>
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Total Amount</Text>
-                            <Text style={styles.totalValue}>
-                            ₹ {item.amount ? item.amount.toLocaleString() : '0'}
-                            </Text>
-                        </View>
-                        </View>
-
-                        {/* ===== NOTES ===== */}
-                        {item.remarks && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Remarks</Text>
-                            <Text style={styles.notes}>{item.remarks}</Text>
-                        </View>
-                        )}
-
-                        {/* ===== EDIT BUTTON ===== */}
-                        <TouchableOpacity
-                            style={styles.OrderEditBtn}
-                            onPress={() => {
-                                setModalView(false);
-                                navigation.navigate('EditOrder', { itemID });
-                            }}
-                        >
-                            <Text style={styles.closeText}>Edit Order</Text>
-                        </TouchableOpacity>
-
-                        {/* ===== CLOSE BUTTON ===== */}
-                        <TouchableOpacity
-                        style={styles.closeBtn}
-                        onPress={() => setModalView(false)}
-                        >
-                        <Text style={styles.closeText}>Close Report</Text>
-                        </TouchableOpacity>
-
                     </View>
-                    </View>
+                </Modal>
+            )}
+
+            {showPaymentReceipt && (
+                <Modal
+                    animationType="slide"
+                    transparent
+                    visible={showPaymentReceipt}
+                    onRequestClose={() => setShowPaymentReceipt(false)}
+                >
+                    <ScrollView style={styles.invoiceModalBackground}>
+                        <ConsumerPaymentReceipt
+                            consumer={consumer}
+                            transaction={item}
+                            onClose={() => setShowPaymentReceipt(false)}
+                        />
+                    </ScrollView>
                 </Modal>
             )}
         </>
@@ -299,7 +325,7 @@ const InfoRow = ({ icon, label, value }) => (
 const ConsumerDetails = ({ route }) => {
     const { consumerID } = route.params;
 
-    const navigation=useNavigation();
+    const navigation = useNavigation();
 
     const [consumer, setConsumer] = useState(null);
     const [orders, setOrders] = useState(null);
@@ -347,7 +373,7 @@ const ConsumerDetails = ({ route }) => {
                 .limit(3);
 
             if (error) {
-                console.log('Order Fetching info:', error.message); 
+                console.log('Order Fetching info:', error.message);
                 return;
             }
 
@@ -517,7 +543,7 @@ const ConsumerDetails = ({ route }) => {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    <TouchableOpacity style={styles.editButton} onPress={()=>navigation.navigate('EditConsumer',{consumerID})}>
+                    <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditConsumer', { consumerID })}>
                         <Ionicons name='create-outline' size={20} color='#fff' />
                     </TouchableOpacity>
 
@@ -551,14 +577,14 @@ const ConsumerDetails = ({ route }) => {
             {/* Action Buttons */}
             <View style={styles.contentContainer}>
                 <View style={styles.buttonRow}>
-                    <TouchableOpacity style={styles.actionButton} onPress={()=>navigation.navigate('ConsumerOrder',{ consumer })}>
+                    <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ConsumerOrder', { consumer })}>
                         <Ionicons name="add-circle-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
                         <Text style={styles.actionButtonText}>
                             Add Sale
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={()=>navigation.navigate('ConsumerPayment',{ consumer })}>
+                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={() => navigation.navigate('ConsumerPayment', { consumer })}>
                         <Ionicons name="wallet-outline" size={20} color="#FF9966" style={{ marginRight: 6 }} />
                         <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>Receive Payment</Text>
                     </TouchableOpacity>
@@ -573,7 +599,7 @@ const ConsumerDetails = ({ route }) => {
                     <Text style={styles.pendingAmount}>
                         ₹{consumer?.Pending_Amount?.toLocaleString() ?? 0}
                     </Text>
-                    
+
                     {/* Aggregated Cost Hint */}
                     <Text style={styles.aggregatedCostText}>
                         * Includes aggregated costs (transport, etc.)
@@ -604,10 +630,10 @@ const ConsumerDetails = ({ route }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Sales</Text>
-                        {orders && orders.length>0?(
-                            <TouchableOpacity onPress={()=>navigation.navigate('OrderDetails',{consumerID})}>
+                        {orders && orders.length > 0 ? (
+                            <TouchableOpacity onPress={() => navigation.navigate('OrderDetails', { consumerID })}>
                                 <Text style={styles.seeMoreText}>See All →</Text>
-                            </TouchableOpacity>):''
+                            </TouchableOpacity>) : ''
                         }
                     </View>
 
@@ -616,7 +642,7 @@ const ConsumerDetails = ({ route }) => {
                             data={orders}
                             keyExtractor={(item) => item.id.toString()}
                             renderItem={({ item, index }) => (
-                                <OrderItem item={item} index={index} />
+                                <OrderItem item={item} index={index} consumer={consumer} />
                             )}
                             ItemSeparatorComponent={() => <View style={styles.separator} />}
                             scrollEnabled={false}
@@ -1116,12 +1142,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
     },
-    OrderEditBtn:{
-        marginTop:16,
-        backgroundColor:'#ba0b1a',
-        paddingVertical:10,
-        borderRadius:8,
-        alignItems:'center'
+    OrderEditBtn: {
+        marginTop: 16,
+        backgroundColor: '#ba0b1a',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center'
     },
     closeText: {
         color: '#fff',

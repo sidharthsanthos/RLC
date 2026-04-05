@@ -336,7 +336,12 @@ const AddOrder = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {alert.message !== "" && (
           <MessageBox type={alert.type} message={alert.message} />
         )}
@@ -553,9 +558,12 @@ const AddOrder = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     backgroundColor: '#f9f9f9'
+  },
+  
+  scrollContent: {
+    padding: 16,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 16 : 16,
   },
   header: {
     fontSize: 22,

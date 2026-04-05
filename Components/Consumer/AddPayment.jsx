@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, ScrollView } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { supabase } from '../../utils/supabase';
@@ -155,10 +155,19 @@ const AddPayment = () => {
     }
 
     return (
-        <View style={styles.container}>
-
-        {/* Alert Message */}
-        {alert.message !== '' && (
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+            <ScrollView 
+                style={styles.container}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Alert Message */}
+                {alert.message !== '' && (
             <View style={styles.alertWrap}>
             <MessageBox type={alert.type} message={alert.message} />
             </View>
@@ -253,7 +262,8 @@ const AddPayment = () => {
             </View>
         )}
 
-    </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
 
@@ -262,9 +272,12 @@ export default AddPayment
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: "#f5f7fa",
-    paddingTop:Platform.OS==='android'?StatusBar.currentHeight:0
+  },
+
+  scrollContent: {
+    padding: 16,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 16 : 16,
   },
 
   heading: {

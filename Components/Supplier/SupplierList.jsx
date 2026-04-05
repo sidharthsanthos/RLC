@@ -38,8 +38,8 @@ const SupplierList = () => {
       <Stack.Screen name='TotalSuppliers' component={TotalSuppliers}/>
       <Stack.Screen name='StockValue' component={StockValue}/>
       <Stack.Screen name='AddSupplier' component={AddSupplier}/>
-      <Stack.Screen name='AddOrder' component={AddOrder}/>
-      <Stack.Screen name='AddPayment' component={AddPayment}/>
+      {/* <Stack.Screen name='AddOrder' component={AddOrder}/>
+      <Stack.Screen name='AddPayment' component={AddPayment}/> */}
     </Stack.Navigator>
   )
 }

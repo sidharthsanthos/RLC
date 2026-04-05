@@ -1,8 +1,6 @@
-import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, Alert, ActivityIndicator } from 'react-native'
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, Alert, ActivityIndicator, StatusBar } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { StatusBar } from 'react-native';
 import { supabase } from '../../utils/supabase';
-import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 
 const EditOrder = ({route, navigation}) => {
@@ -410,3 +408,4 @@ const styles = StyleSheet.create({
         fontSize: 16
     }
 })
+

@@ -16,13 +16,6 @@ const AddOrder = () => {
     totalBags:0,
     notes:''
   });
-  const initialData={
-    quantity:0,
-    quality:'',
-    netAmount:0,
-    totalAmount:0,
-    totalBags:0
-  }
   const [alert,setAlert]=useState({type:'',message:''})
 
   const fetchSuppliers=async ()=>{

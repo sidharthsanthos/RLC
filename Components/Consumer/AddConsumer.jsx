@@ -128,7 +128,7 @@ export default AddConsumer;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0+50,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 50 : 50,
     paddingHorizontal: 20,
     backgroundColor: '#fff'
   },

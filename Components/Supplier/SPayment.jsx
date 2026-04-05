@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, ScrollView } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../../utils/supabase';
 import MessageBox from '../MessageBox';
@@ -15,7 +15,7 @@ const SPayment = ({route}) => {
     const [supplier,setSupplier]=useState(null);
     const [alert,setAlert]=useState({type:'',message:''});
     const [paymentData,setPaymentData]=useState({
-        amount:0,
+        amount:'',
         type:'debit',
         mode:'',
         remarks:''
@@ -44,8 +44,6 @@ const SPayment = ({route}) => {
                     return;
                 },5000);
             }
-
-            console.log(data);
             
             setSupplier(data[0]);
         }catch(err){
@@ -63,22 +61,18 @@ const SPayment = ({route}) => {
 
     const handleInput=(field,value)=>{
         let updated={...paymentData};
-
         updated[field]=value;
-
         setPaymentData(updated);
     }
 
     const savePayment=async ()=>{
         const paymentDate=oDate.toISOString().split('T')[0];
 
-        const amt=paymentData.amount;
+        const amt=Number(paymentData.amount);
         const mode=paymentData.mode;
 
-        if(amt==0){            
+        if(amt===0 || !paymentData.amount){            
             setAlert({type:'error',message:'Please Enter Amount'})
-            console.log(alert);
-            
             setTimeout(()=>{
                 setAlert({type:'',message:''});
                 return;
@@ -95,11 +89,10 @@ const SPayment = ({route}) => {
             return;
         }
 
-        const newPending=supplier?.Pending_Amount-amt;
-        console.log(newPending);
+        const newPending=Number(supplier?.Pending_Amount)-amt;
 
         if(newPending<0){
-            setAlert({type:'error',message:'Please Enter Valid Amount'})
+            setAlert({type:'error',message:'Payment exceeds pending amount'})
             setTimeout(()=>{
                 setAlert({type:'',message:''});
                 return;
@@ -115,7 +108,7 @@ const SPayment = ({route}) => {
                 .insert({
                     ref_type:'supplier',
                     ref_id:supplierID,
-                    amount:paymentData.amount,
+                    amount:amt,
                     transaction_type:paymentData.type,
                     mode:paymentData.mode.toLowerCase(),
                     date:paymentDate,
@@ -145,12 +138,12 @@ const SPayment = ({route}) => {
                     return;
                 }
 
-                setAlert({type:'success', message:'Transaction Saved Successfully'})
+                setAlert({type:'success', message:'Payment Saved Successfully'})
                 setTimeout(()=>{
                     setAlert({type:'',message:''})
                     fetchSupplier();
                     setPaymentData({
-                        amount:0,
+                        amount:'',
                         type:'debit',
                         mode:'',
                         remarks:''
@@ -158,152 +151,228 @@ const SPayment = ({route}) => {
                     return;
                 },3000);
                 
-
                 console.log('Payment Logged Successfully');
         }catch(err){
             console.error('Unexpected Error Occured',err);
-            setAlert({type:'error',message:err})
+            setAlert({type:'error',message:err.message})
             setTimeout(()=>{
                 setAlert({type:'',message:''})
                 return;
             },3000);
         }
-
-        
     }
 
     return (
-        <View style={styles.container}>
-            {alert.message !== '' && (
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+            <ScrollView 
+                style={styles.container}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Alert Message */}
+                {alert.message !== '' && (
                 <View style={styles.alertWrap}>
                     <MessageBox type={alert.type} message={alert.message}/>
                 </View>
             )}
-            <Text style={styles.heading}>Add Payment {supplier?'for '+supplier.Name:''}</Text>
 
-            <Text style={styles.pendingText}>
-                Pending Amount:  
-                <Text style={styles.amountHighlight}> ₹{supplier?.Pending_Amount}</Text>
-            </Text>
+            <Text style={styles.heading}>Add Payment</Text>
 
-            <TouchableOpacity
-               style={[styles.input,{justifyContent:'center'}]}
-               onPress={()=>setShowDatePicker(true)}
-            >
-                <Text>
-                    {oDate?oDate.toDateString():'Select Payment Date'}
+            {/* Supplier Info Card */}
+            <View style={styles.card}>
+                <Text style={styles.supplierName}>{supplier?.Name || 'Loading...'}</Text>
+                
+                <Text style={styles.pendingText}>
+                    Pending Amount:  
+                    <Text style={styles.amountHighlight}> ₹{supplier?.Pending_Amount}</Text>
                 </Text>
-            </TouchableOpacity>
-
-            {showdatepicker && (
-                <DateTimePicker
-                    value={oDate}
-                    mode='date'
-                    display='calendar'
-                    onChange={(event,selectedDate)=>{
-                        setShowDatePicker(false);
-                        if(selectedDate){
-                            setODate(selectedDate);
-                        }
-                    }}
-                />
-            )}
-
-            <Text style={styles.label}>Amount</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Enter amount"
-                keyboardType="numeric"
-                value={paymentData.amount}
-                onChangeText={(v) => handleInput("amount", v)}
-            />
-
-            <Text style={styles.label}>Transaction Mode</Text>
-            <View style={styles.pickerWrap}>
-                <Picker
-                selectedValue={paymentData.mode}
-                onValueChange={(v) => handleInput("mode", v)}
-                style={styles.picker}
-                >
-                <Picker.Item label="Select Mode" value="" />
-                {transactionMode.map((mode) => (
-                    <Picker.Item
-                    key={mode}
-                    label={mode.toUpperCase()}
-                    value={mode}
-                    />
-                ))}
-                </Picker>
             </View>
 
-            <Text style={styles.label}>Notes</Text>
-            <TextInput
-                style={styles.textArea}
-                placeholder="Optional Notes"
-                value={paymentData?.remarks}
-                onChangeText={(v) => handleInput("remarks", v)}
-                multiline
-            />
+            {supplier?.Pending_Amount > 0 ? (
+                <View style={styles.card}>
+                    {/* Date Picker */}
+                    <Text style={styles.label}>Payment Date</Text>
+                    <TouchableOpacity
+                        style={styles.dateInput}
+                        onPress={()=>setShowDatePicker(true)}
+                    >
+                        <Text style={styles.dateText}>
+                            {oDate?oDate.toDateString():'Select Payment Date'}
+                        </Text>
+                    </TouchableOpacity>
 
-            <TouchableOpacity style={styles.saveBtn} onPress={savePayment}>
-                <Text style={styles.btnText}>Save Payment</Text>
-            </TouchableOpacity>
+                    {showdatepicker && (
+                        <DateTimePicker
+                            value={oDate}
+                            mode='date'
+                            display='calendar'
+                            onChange={(event,selectedDate)=>{
+                                setShowDatePicker(false);
+                                if(selectedDate){
+                                    setODate(selectedDate);
+                                }
+                            }}
+                        />
+                    )}
 
-            <TouchableOpacity style={styles.saveBtn} onPress={()=>navigation.navigate('SupplierDetails',{supplierID})}>
-                <Text style={styles.btnText}>{'<-- Back'}</Text>
-            </TouchableOpacity>
+                    {/* Amount Input */}
+                    <Text style={styles.label}>Amount</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter amount"
+                        keyboardType="numeric"
+                        value={paymentData.amount}
+                        onChangeText={(v) => handleInput("amount", v)}
+                    />
 
+                    {/* Mode Picker */}
+                    <Text style={styles.label}>Transaction Mode</Text>
+                    <View style={styles.pickerWrap}>
+                        <Picker
+                        selectedValue={paymentData.mode}
+                        onValueChange={(v) => handleInput("mode", v)}
+                        style={styles.picker}
+                        >
+                        <Picker.Item label="Select Mode" value="" />
+                        {transactionMode.map((mode) => (
+                            <Picker.Item
+                            key={mode}
+                            label={mode.toUpperCase()}
+                            value={mode}
+                            />
+                        ))}
+                        </Picker>
+                    </View>
 
-        </View>
+                    {/* Notes */}
+                    <Text style={styles.label}>Notes</Text>
+                    <TextInput
+                        style={styles.textArea}
+                        placeholder="Optional notes"
+                        value={paymentData?.remarks}
+                        onChangeText={(v) => handleInput("remarks", v)}
+                        multiline
+                    />
+
+                    {/* Save Button */}
+                    <TouchableOpacity style={styles.saveBtn} onPress={savePayment}>
+                        <Text style={styles.btnText}>Save Payment</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <View style={styles.card}>
+                    {supplier ? (
+                        <Text style={styles.cleanText}>Books Clean! No Pending Amount.</Text>
+                    ) : (
+                        <Text style={styles.cleanText}>Loading supplier information...</Text>
+                    )}
+                </View>
+            )}
+            </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
 
 export default SPayment
 
 const styles = StyleSheet.create({
-    container:{
-        display:'flex',
-        paddingTop:Platform.OS==='android'?StatusBar.currentHeight:0,
-        margin:10,
-        backgroundColor:'#f5f7fa'
+    container: {
+        flex: 1,
+        backgroundColor: "#f5f7fa",
     },
-    alertWrap: {
-        marginBottom: 12,
+
+    scrollContent: {
+        padding: 16,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 16 : 16,
     },
+
     heading: {
         fontSize: 22,
         fontWeight: "700",
         textAlign: "center",
         marginBottom: 15,
         color: "#333",
-        textTransform:'capitalize'
     },
+
+    alertWrap: {
+        marginBottom: 12,
+    },
+
+    card: {
+        backgroundColor: "#fff",
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 20,
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+    },
+
+    supplierName: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#333",
+        marginBottom: 4,
+    },
+
+    byName: {
+        fontSize: 14,
+        color: "#666",
+        marginBottom: 12,
+    },
+
     pendingText: {
         fontSize: 16,
         fontWeight: "600",
-        marginBottom: 14,
         color: "#222",
     },
+
     amountHighlight: {
         color: "#d9534f",
         fontWeight: "700",
     },
+
     label: {
         fontSize: 14,
         fontWeight: "600",
         marginBottom: 6,
+        marginTop: 10,
         color: "#444",
     },
+
+    dateInput: {
+        backgroundColor: "#f1f1f1",
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderRadius: 8,
+        marginBottom: 12,
+        justifyContent: 'center',
+    },
+
+    dateText: {
+        fontSize: 15,
+        color: "#333",
+    },
+
     picker: {
         backgroundColor: "#f1f1f1",
         borderRadius: 8,
         marginBottom: 12,
     },
+
     pickerWrap: {
         backgroundColor: "#f1f1f1",
         borderRadius: 8,
         marginBottom: 12,
     },
+
     input: {
         backgroundColor: "#f1f1f1",
         paddingHorizontal: 12,
@@ -311,8 +380,8 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginBottom: 12,
         fontSize: 15,
-        borderColor:'#ccc'
     },
+
     textArea: {
         backgroundColor: "#f1f1f1",
         paddingHorizontal: 12,
@@ -323,12 +392,22 @@ const styles = StyleSheet.create({
         textAlignVertical: "top",
         marginBottom: 20,
     },
+
+    cleanText: {
+        fontSize: 16,
+        fontWeight: "600",
+        textAlign: "center",
+        color: "#666",
+        paddingVertical: 10,
+    },
+
     saveBtn: {
         backgroundColor: "#3b82f6",
         paddingVertical: 12,
         borderRadius: 8,
         alignItems: "center",
     },
+
     btnText: {
         color: "#fff",
         fontSize: 16,

@@ -66,7 +66,7 @@ export default function ConsumerTabs() {
         }}
       />
       
-      <Tab.Screen 
+      {/* <Tab.Screen 
         name='AddOrder'
         component={AddOrder}
         options={{
@@ -87,7 +87,7 @@ export default function ConsumerTabs() {
           ),
           unmountOnBlur: true
         }}
-      />
+      /> */}
       <Tab.Screen
         name='Reports'
         component={Reports}

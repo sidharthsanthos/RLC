@@ -1,6 +1,7 @@
-import { Platform, StatusBar, StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native'
+import { Platform, StatusBar, StyleSheet, Text, View, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView } from 'react-native'
 import React, { useState } from 'react'
-import { Picker } from '@react-native-picker/picker'   // Must install this
+import { Picker } from '@react-native-picker/picker'
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../utils/supabase';
 import MessageBox from '../MessageBox';
 
@@ -85,83 +86,102 @@ const AddSupplier = () => {
   } 
 
   return (
-    
-    <View style={styles.container}>
-      {alert.message !=="" && (
-        <MessageBox type={alert.type} message={alert.message}/>
-      )}
-      <Text style={styles.heading}>Add Supplier</Text>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {alert.message !=="" && (
+          <View style={styles.alertWrap}>
+            <MessageBox type={alert.type} message={alert.message}/>
+          </View>
+        )}
+        
+        <Text style={styles.heading}>Add New Supplier</Text>
 
-      {/* Supplier Name */}
-      <Text style={styles.label}>Supply Name</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Supplier Name"
-        value={name}
-        onChangeText={setName}
-      />
+        {/* Main Form Card */}
+        <View style={styles.card}>
+          {/* Supplier Name */}
+          <Text style={styles.label}>Supplier Name *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter supplier name"
+            value={name}
+            onChangeText={setName}
+          />
 
-      {/* By Name */}
-      <Text style={styles.label}>Supply ByName</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="By Name / Shop Name"
-        value={byname}
-        onChangeText={setByName}
-      />
+          {/* By Name */}
+          <Text style={styles.label}>By Name / Shop Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter by name or shop name"
+            value={byname}
+            onChangeText={setByName}
+          />
 
-      {/* Contact */}
-      <Text style={styles.label}>Supplier Contact</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Contact Number"
-        keyboardType="numeric"
-        value={contact}
-        onChangeText={setContact}
-      />
+          {/* Contact */}
+          <Text style={styles.label}>Contact Number *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="10-digit mobile number"
+            keyboardType="numeric"
+            maxLength={10}
+            value={contact}
+            onChangeText={setContact}
+          />
 
-      {/* Address */}
-      <Text style={styles.label}>Supplier Address</Text>
-      <TextInput
-        style={[styles.input, { height: 80 }]}
-        placeholder="Address"
-        multiline
-        value={address}
-        onChangeText={setAddress}
-      />
+          {/* Address */}
+          <Text style={styles.label}>Address</Text>
+          <TextInput
+            style={styles.textArea}
+            placeholder="Enter supplier address"
+            multiline
+            numberOfLines={3}
+            value={address}
+            onChangeText={setAddress}
+          />
 
-      {/* State Dropdown */}
-      <Text style={styles.label}>State</Text>
-      <View style={styles.dropdownContainer}>
-        <Picker
-          selectedValue={state}
-          onValueChange={(item) => setState(item)}
-        >
-          <Picker.Item label="Select State" value="" />
-          {southStates.map((s) => (
-            <Picker.Item key={s} label={s} value={s} />
-          ))}
-        </Picker>
-      </View>
+          {/* State Dropdown */}
+          <Text style={styles.label}>State *</Text>
+          <View style={styles.pickerWrap}>
+            <Picker
+              selectedValue={state}
+              onValueChange={(item) => setState(item)}
+            >
+              <Picker.Item label="Select State" value="" />
+              {southStates.map((s) => (
+                <Picker.Item key={s} label={s} value={s} />
+              ))}
+            </Picker>
+          </View>
 
-      {/* Supply Type Dropdown */}
-      <Text style={styles.label}>Supply Type</Text>
-      <View style={styles.dropdownContainer}>
-        <Picker
-          selectedValue={supplyType}
-          onValueChange={(item) => setSupplyType(item)}
-        >
-          <Picker.Item label="Sack / Bag Wise" value={1} />
-          <Picker.Item label="Kg Wise" value={2} />
-        </Picker>
-      </View>
+          {/* Supply Type Dropdown */}
+          <Text style={styles.label}>Supply Type</Text>
+          <View style={styles.pickerWrap}>
+            <Picker
+              selectedValue={supplyType}
+              onValueChange={(item) => setSupplyType(item)}
+            >
+              <Picker.Item label="Sack / Bag Wise" value={1} />
+              <Picker.Item label="Kg Wise" value={2} />
+            </Picker>
+          </View>
+        </View>
 
-      {/* Submit Button */}
-      <TouchableOpacity style={styles.button} onPress={()=>AddSupplier()}>
-        <Text style={styles.buttonText}>Add Supplier</Text>
-      </TouchableOpacity>
+        {/* Submit Button */}
+        <TouchableOpacity style={styles.button} onPress={()=>AddSupplier()}>
+          <Ionicons name="add-circle" size={20} color="#fff" style={{marginRight: 8}} />
+          <Text style={styles.buttonText}>Add Supplier</Text>
+        </TouchableOpacity>
 
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -170,46 +190,89 @@ export default AddSupplier;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0+50,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff'
+    backgroundColor: '#f5f7fa'
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 20,
-    marginTop: 10
+  
+  scrollContent: {
+    padding: 16,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 16 : 16,
   },
-  input: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#999',
-    borderRadius: 8,
-    padding: 12,
+  
+  alertWrap: {
     marginBottom: 12,
-    fontSize: 16
   },
+  
+  heading: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333'
+  },
+  
+  card: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  
   label: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 5,
-    marginTop: 10
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+    marginTop: 12,
+    color: '#444'
   },
-  dropdownContainer: {
-    borderWidth: 1,
-    borderColor: '#999',
+  
+  input: {
+    backgroundColor: '#f9f9f9',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     borderRadius: 8,
-    marginBottom: 12
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
+  
+  textArea: {
+    backgroundColor: '#f9f9f9',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    fontSize: 15,
+    height: 90,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  
+  pickerWrap: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  
   button: {
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 15
+    backgroundColor: '#51CF66',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
+  
   buttonText: {
     color: '#fff',
-    textAlign: 'center',
-    fontSize: 18
+    fontSize: 16,
+    fontWeight: '700'
   }
 });

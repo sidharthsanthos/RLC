@@ -101,7 +101,7 @@ export default CTM
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 10,
         backgroundColor: '#f5f7fa'
     },
     center: {

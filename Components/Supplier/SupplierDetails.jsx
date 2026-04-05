@@ -7,6 +7,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 import uuid from 'react-native-uuid';
 import { LinearGradient } from 'expo-linear-gradient'; // NEW PACKAGE
 import { useNavigation } from '@react-navigation/native';
+import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 
 const formatDate = (isoDate) => {
     if (!isoDate) return "";
@@ -17,14 +19,14 @@ const formatDate = (isoDate) => {
     return `${day}-${month}-${year}`;
 };
 
-const TransactionItem = ({ item, index }) => {
+const TransactionItem = ({ item, index, supplier }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
 
-    const [modalView,setModalView]=useState(false);
-    const navigation=useNavigation();
-    const itemID=item.id;
+    const [modalView, setModalView] = useState(false);
 
+    const navigation = useNavigation();
+    const itemID = item.id;
 
     useEffect(() => {
         Animated.parallel([
@@ -60,7 +62,7 @@ const TransactionItem = ({ item, index }) => {
 
     return (
         <>
-            <TouchableOpacity onPress={()=>setModalView(true)}>
+            <TouchableOpacity onPress={() => setModalView(true)}>
                 <Animated.View
                     style={[
                         styles.txCard,
@@ -93,79 +95,95 @@ const TransactionItem = ({ item, index }) => {
                 >
                     <View style={styles.modalBackground}>
 
-                    {/* Push report slightly upward to feel "highlighted" */}
-                    <View style={styles.transactionContainer}>
+                        {/* Push report slightly upward to feel "highlighted" */}
+                        <View style={styles.transactionContainer}>
 
-                        {/* ===== HEADER ===== */}
-                        <View style={styles.transactionHeader}>
-                        <Text style={styles.transactionTitle}>Payment Report</Text>
-                        <Text style={styles.transactionStatus}>COMPLETED</Text>
+                            {/* ===== HEADER ===== */}
+                            <View style={styles.transactionHeader}>
+                                <Text style={styles.transactionTitle}>Payment Report</Text>
+                                <Text style={styles.transactionStatus}>COMPLETED</Text>
+                            </View>
+
+                            {/* ===== TRANSACTION DETAILS ===== */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Transaction Details</Text>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Date</Text>
+                                    <Text style={styles.value}>{formatDate(item.date)}</Text>
+                                </View>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Payment Mode</Text>
+                                    <Text style={styles.value}>{item.mode.toUpperCase()}</Text>
+                                </View>
+                            </View>
+
+                            {/* ===== AMOUNT HIGHLIGHT ===== */}
+                            <View style={styles.amountCard}>
+                                <Text style={styles.amountLabel}>Paid Amount</Text>
+                                <Text style={styles.amountValue}>
+                                    ₹ {item.amount.toLocaleString()}
+                                </Text>
+                            </View>
+
+                            {/* ===== REMARKS ===== */}
+                            {item.remarks && (
+                                <View style={styles.section}>
+                                    <Text style={styles.sectionTitle}>Remarks</Text>
+                                    <Text style={styles.notes}>{item.remarks}</Text>
+                                </View>
+                            )}
+
+                            <TouchableOpacity
+                                style={styles.OrderEditBtn}
+                                onPress={() => navigation.navigate('EditPayment', { itemID })}
+                            >
+                                <Text style={styles.closeText}>Edit Order</Text>
+                            </TouchableOpacity>
+
+                            {/* ===== CLOSE BUTTON ===== */}
+                            <TouchableOpacity
+                                style={styles.closeBtn}
+                                onPress={() => setModalView(false)}
+                            >
+                                <Text style={styles.closeText}>Close</Text>
+                            </TouchableOpacity>
+
                         </View>
-
-                        {/* ===== TRANSACTION DETAILS ===== */}
-                        <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Transaction Details</Text>
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Date</Text>
-                            <Text style={styles.value}>{formatDate(item.date)}</Text>
-                        </View>
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Payment Mode</Text>
-                            <Text style={styles.value}>{item.mode.toUpperCase()}</Text>
-                        </View>
-                        </View>
-
-                        {/* ===== AMOUNT HIGHLIGHT ===== */}
-                        <View style={styles.amountCard}>
-                        <Text style={styles.amountLabel}>Paid Amount</Text>
-                        <Text style={styles.amountValue}>
-                            ₹ {item.amount.toLocaleString()}
-                        </Text>
-                        </View>
-
-                        {/* ===== REMARKS ===== */}
-                        {item.remarks && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Remarks</Text>
-                            <Text style={styles.notes}>{item.remarks}</Text>
-                        </View>
-                        )}
-
-                        <TouchableOpacity
-                            style={styles.OrderEditBtn}
-                            onPress={()=>navigation.navigate('EditPayment',{itemID})}
-                        >
-                            <Text style={styles.closeText}>Edit Order</Text>
-                        </TouchableOpacity>
-
-                        {/* ===== CLOSE BUTTON ===== */}
-                        <TouchableOpacity
-                        style={styles.closeBtn}
-                        onPress={() => setModalView(false)}
-                        >
-                        <Text style={styles.closeText}>Close</Text>
-                        </TouchableOpacity>
-
-                    </View>
                     </View>
                 </Modal>
-                )}
+            )}
+
+            {showInvoice && (
+                <Modal
+                    animationType="slide"
+                    transparent
+                    visible={showInvoice}
+                    onRequestClose={() => setShowInvoice(false)}
+                >
+                    <ScrollView style={styles.invoiceModalBackground}>
+                        <SupplierInvoice
+                            supplier={supplier}
+                            transaction={item}
+                            onClose={() => setShowInvoice(false)}
+                        />
+                    </ScrollView>
+                </Modal>
+            )}
         </>
     );
 };
 
-const OrderItem = ({ item, index }) => {
+const OrderItem = ({ item, index, supplier }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(20)).current;
 
-    const [modalView,setModalView]=useState(false);
+    const [modalView, setModalView] = useState(false);
 
-    const navigation=useNavigation();
+    const navigation = useNavigation();
 
-
-    const itemID=item.id;
+    const itemID = item.id;
 
     useEffect(() => {
         Animated.parallel([
@@ -192,7 +210,7 @@ const OrderItem = ({ item, index }) => {
 
     return (
         <>
-            <TouchableOpacity onPress={()=>setModalView(true)}>
+            <TouchableOpacity onPress={() => setModalView(true)}>
                 <Animated.View
                     style={[
                         styles.orderCard,
@@ -227,161 +245,162 @@ const OrderItem = ({ item, index }) => {
                     onRequestClose={() => setModalView(false)}
                 >
                     <View style={styles.modalBackground}>
-                    <View style={styles.reportContainer}>
+                        <View style={styles.reportContainer}>
 
-                        {/* ===== HEADER ===== */}
-                        <View style={styles.header}>
-                        <Text style={styles.title}>Order Report</Text>
-                        <Text style={styles.subTitle}>IN STOCK</Text>
-                        </View>
-
-                        {/* ===== ORDER INFO ===== */}
-                        <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Order Information</Text>
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Date</Text>
-                            <Text style={styles.value}>{formatDate(item.Date)}</Text>
-                        </View>
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Stock Type</Text>
-                            <Text style={styles.value}>
-                            {item.Stock_Type.replace('-', ' ').toUpperCase()}
-                            </Text>
-                        </View>
-                        </View>
-
-                        {/* ===== QUANTITY DETAILS ===== */}
-                        <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Quantity Details</Text>
-
-                        {item.Unit_Type === 1 ? (
-                            <>
-                            <View style={styles.row}>
-                                <Text style={styles.label}>Unit Type</Text>
-                                <Text style={styles.value}>Sack / Bag Wise</Text>
+                            {/* ===== HEADER ===== */}
+                            <View style={styles.header}>
+                                <Text style={styles.title}>Order Report</Text>
+                                <Text style={styles.subTitle}>IN STOCK</Text>
                             </View>
 
-                            <View style={styles.row}>
-                                <Text style={styles.label}>Total Bags</Text>
-                                <Text style={styles.value}>{item.Total_Bags} Bags</Text>
+                            {/* ===== ORDER INFO ===== */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Order Information</Text>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Date</Text>
+                                    <Text style={styles.value}>{formatDate(item.Date)}</Text>
+                                </View>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Stock Type</Text>
+                                    <Text style={styles.value}>
+                                        {item.Stock_Type.replace('-', ' ').toUpperCase()}
+                                    </Text>
+                                </View>
                             </View>
 
-                            <View style={styles.row}>
-                                <Text style={styles.label}>Net Quantity</Text>
-                                <Text style={styles.value}>
-                                {item.Net_Quantity} Bags
-                                </Text>
-                            </View>
-                            </>
-                        ) : (
-                            <>
-                            <View style={styles.row}>
-                                <Text style={styles.label}>Unit Type</Text>
-                                <Text style={styles.value}>Kilogram Wise</Text>
+                            {/* ===== QUANTITY DETAILS ===== */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Quantity Details</Text>
+
+                                {item.Unit_Type === 1 ? (
+                                    <>
+                                        <View style={styles.row}>
+                                            <Text style={styles.label}>Unit Type</Text>
+                                            <Text style={styles.value}>Sack / Bag Wise</Text>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <Text style={styles.label}>Total Bags</Text>
+                                            <Text style={styles.value}>{item.Total_Bags} Bags</Text>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <Text style={styles.label}>Net Quantity</Text>
+                                            <Text style={styles.value}>
+                                                {item.Net_Quantity} Bags
+                                            </Text>
+                                        </View>
+                                    </>
+                                ) : (
+                                    <>
+                                        <View style={styles.row}>
+                                            <Text style={styles.label}>Unit Type</Text>
+                                            <Text style={styles.value}>Kilogram Wise</Text>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <Text style={styles.label}>Total Bags</Text>
+                                            <Text style={styles.value}>{item.Total_Bags} Bags</Text>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <Text style={styles.label}>Net Quantity</Text>
+                                            <Text style={styles.value}>
+                                                {item.Net_Quantity} kg
+                                            </Text>
+                                        </View>
+                                    </>
+                                )}
                             </View>
 
-                            <View style={styles.row}>
-                                <Text style={styles.label}>Total Bags</Text>
-                                <Text style={styles.value}>{item.Total_Bags} Bags</Text>
+                            {/* ===== QUALITY ===== */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Quality Assessment</Text>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Quality</Text>
+                                    <Text
+                                        style={[
+                                            styles.qualityBadge,
+                                            item.Quality === 'Good' && styles.good,
+                                            item.Quality === 'Average' && styles.average,
+                                            item.Quality === 'Bad' && styles.bad,
+                                        ]}
+                                    >
+                                        {item.Quality.toUpperCase()}
+                                    </Text>
+                                </View>
                             </View>
 
-                            <View style={styles.row}>
-                                <Text style={styles.label}>Net Quantity</Text>
-                                <Text style={styles.value}>
-                                {item.Net_Quantity} kg
-                                </Text>
+                            {/* ===== FINANCIAL DETAILS ===== */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionTitle}>Financial Summary</Text>
+
+                                {item.Unit_Type === 1 ? (
+                                    <>
+                                        <View style={styles.row}>
+                                            <Text style={styles.label}>Net Quantity</Text>
+                                            <Text style={styles.value}>
+                                                {item.Net_Quantity} Bags
+                                            </Text>
+                                        </View>
+                                    </>
+                                ) : (
+                                    <>
+                                        <View style={styles.row}>
+                                            <Text style={styles.label}>Net Quantity</Text>
+                                            <Text style={styles.value}>
+                                                {item.Net_Quantity} kg
+                                            </Text>
+                                        </View>
+                                    </>
+                                )}
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Net Amount</Text>
+                                    <Text style={styles.value}>₹ {item.Net_Amount.toLocaleString()}</Text>
+                                </View>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.label}>Total Amount</Text>
+                                    <Text style={styles.totalValue}>
+                                        ₹ {item.Total_Amount.toLocaleString()}
+                                    </Text>
+                                </View>
                             </View>
-                            </>
-                        )}
-                        </View>
 
-                        {/* ===== QUALITY ===== */}
-                        <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Quality Assessment</Text>
+                            {/* ===== NOTES ===== */}
+                            {item.Notes && (
+                                <View style={styles.section}>
+                                    <Text style={styles.sectionTitle}>Remarks</Text>
+                                    <Text style={styles.notes}>{item.Notes}</Text>
+                                </View>
+                            )}
 
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Quality</Text>
-                            <Text
-                            style={[
-                                styles.qualityBadge,
-                                item.Quality === 'Good' && styles.good,
-                                item.Quality === 'Average' && styles.average,
-                                item.Quality === 'Bad' && styles.bad,
-                            ]}
+                            <TouchableOpacity
+                                style={styles.OrderEditBtn}
+                                onPress={() => navigation.navigate('EditOrder', { itemID })}
                             >
-                            {item.Quality.toUpperCase()}
-                            </Text>
+                                <Text style={styles.closeText}>Edit Order</Text>
+                            </TouchableOpacity>
+
+
+                            {/* ===== CLOSE BUTTON ===== */}
+                            <TouchableOpacity
+                                style={styles.closeBtn}
+                                onPress={() => setModalView(false)}
+                            >
+                                <Text style={styles.closeText}>Close Report</Text>
+                            </TouchableOpacity>
+
                         </View>
-                        </View>
-
-                        {/* ===== FINANCIAL DETAILS ===== */}
-                        <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Financial Summary</Text>
-
-                        {item.Unit_Type === 1 ? (
-                            <>
-                            <View style={styles.row}>
-                                <Text style={styles.label}>Net Quantity</Text>
-                                <Text style={styles.value}>
-                                {item.Net_Quantity} Bags
-                                </Text>
-                            </View>
-                            </>
-                        ) : (
-                            <>
-                            <View style={styles.row}>
-                                <Text style={styles.label}>Net Quantity</Text>
-                                <Text style={styles.value}>
-                                {item.Net_Quantity} kg
-                                </Text>
-                            </View>
-                            </>
-                        )}
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Net Amount</Text>
-                            <Text style={styles.value}>₹ {item.Net_Amount.toLocaleString()}</Text>
-                        </View>
-
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Total Amount</Text>
-                            <Text style={styles.totalValue}>
-                            ₹ {item.Total_Amount.toLocaleString()}
-                            </Text>
-                        </View>
-                        </View>
-
-                        {/* ===== NOTES ===== */}
-                        {item.Notes && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Remarks</Text>
-                            <Text style={styles.notes}>{item.Notes}</Text>
-                        </View>
-                        )}
-
-                        <TouchableOpacity
-                            style={styles.OrderEditBtn}
-                            onPress={()=>navigation.navigate('EditOrder',{itemID})}
-                        >
-                            <Text style={styles.closeText}>Edit Order</Text>
-                        </TouchableOpacity>
-
-                        {/* ===== CLOSE BUTTON ===== */}
-                        <TouchableOpacity
-                        style={styles.closeBtn}
-                        onPress={() => setModalView(false)}
-                        >
-                        <Text style={styles.closeText}>Close Report</Text>
-                        </TouchableOpacity>
-
-                    </View>
                     </View>
                 </Modal>
-                )}
+            )}
         </>
-        
+
     );
 };
 
@@ -400,7 +419,7 @@ const InfoRow = ({ icon, label, value }) => (
 const SupplierDetails = ({ route }) => {
     const { supplierID } = route.params;
 
-    const navigation=useNavigation();
+    const navigation = useNavigation();
 
     const [supplier, setSupplier] = useState(null);
     const [stock, setStock] = useState(null);
@@ -540,13 +559,13 @@ const SupplierDetails = ({ route }) => {
 
             const fileBytes = base64ToUint8Array(base64);
             const fileExt = localUri.split('.').pop().split('?')[0];
-            const fileName = `${uuid.v4()}.${fileExt}`;
-            const filePath = `Logos/${fileName}`;
+            const fileName = `${uuid.v4()}.${fileExt} `;
+            const filePath = `Logos / ${fileName} `;
 
             const { error: uploadError } = await supabase.storage
                 .from('supplier_logos')
                 .upload(filePath, fileBytes, {
-                    contentType: `image/${fileExt}`,
+                    contentType: `image / ${fileExt} `,
                     cacheControl: '3600',
                     upsert: false,
                 });
@@ -613,7 +632,7 @@ const SupplierDetails = ({ route }) => {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    <TouchableOpacity style={styles.editButton} onPress={()=>navigation.navigate('SupplierEdit',{supplierID})}>
+                    <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('SupplierEdit', { supplierID })}>
                         <Ionicons name='create-outline' size={20} color='#fff' />
                     </TouchableOpacity>
 
@@ -647,14 +666,14 @@ const SupplierDetails = ({ route }) => {
             {/* Action Buttons */}
             <View style={styles.contentContainer}>
                 <View style={styles.buttonRow}>
-                    <TouchableOpacity style={styles.actionButton} onPress={()=>navigation.navigate('SupplierOrder',{ supplier })}>
+                    <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('SupplierOrder', { supplier })}>
                         <Ionicons name="add-circle-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
                         <Text style={styles.actionButtonText}>
                             Add Order
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={()=>navigation.navigate('SupplierPayment',{supplierID})}>
+                    <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={() => navigation.navigate('SupplierPayment', { supplierID })}>
                         <Ionicons name="wallet-outline" size={20} color="#6C63FF" style={{ marginRight: 6 }} />
                         <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>Add Payment</Text>
                     </TouchableOpacity>
@@ -709,11 +728,11 @@ const SupplierDetails = ({ route }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Orders</Text>
-                        {stock && stock.length>0?(
-                            <TouchableOpacity onPress={()=>navigation.navigate('OrderDetails',{supplierID})}>
+                        {stock && stock.length > 0 ? (
+                            <TouchableOpacity onPress={() => navigation.navigate('OrderDetails', { supplierID })}>
                                 <Text style={styles.seeMoreText}>See All →</Text>
-                            </TouchableOpacity>):''
-                        }                            
+                            </TouchableOpacity>) : ''
+                        }
                     </View>
 
                     {stock && stock.length > 0 ? (
@@ -721,7 +740,7 @@ const SupplierDetails = ({ route }) => {
                             data={stock.slice(0, 3)}
                             keyExtractor={(item) => item.id.toString()}
                             renderItem={({ item, index }) => (
-                                <OrderItem item={item} index={index} />
+                                <OrderItem item={item} index={index} supplier={supplier} />
                             )}
                             ItemSeparatorComponent={() => <View style={styles.separator} />}
                             scrollEnabled={false}
@@ -738,7 +757,7 @@ const SupplierDetails = ({ route }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Transactions</Text>
-                        <TouchableOpacity onPress={()=>navigation.navigate('PaymentDetails',{supplierID})}>
+                        <TouchableOpacity onPress={() => navigation.navigate('PaymentDetails', { supplierID })}>
                             <Text style={styles.seeMoreText}>See All →</Text>
                         </TouchableOpacity>
                     </View>
@@ -748,7 +767,7 @@ const SupplierDetails = ({ route }) => {
                             data={transactions.slice(0, 3)}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item, index }) => (
-                                <TransactionItem item={item} index={index} />
+                                <TransactionItem item={item} index={index} supplier={supplier} />
                             )}
                             ItemSeparatorComponent={() => <View style={styles.separator} />}
                             scrollEnabled={false}
@@ -1074,6 +1093,14 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         letterSpacing: 0.5,
     },
+    actionGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    invoiceModalBackground: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
     emptyState: {
         backgroundColor: '#fff',
         padding: 40,
@@ -1219,12 +1246,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
     },
-    OrderEditBtn:{
-        marginTop:16,
-        backgroundColor:'#ba0b1a',
-        paddingVertical:10,
-        borderRadius:8,
-        alignItems:'center'
+    OrderEditBtn: {
+        marginTop: 16,
+        backgroundColor: '#ba0b1a',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center'
     },
     closeText: {
         color: '#fff',

@@ -17,14 +17,14 @@ const InventoryTrendCard = () => {
                .from('daily_inventory_summary')
                .select('*')
                .eq('date',today)
-               .single();
+               .limit(1);
 
             if(error){
                 console.error('Fetching View Error Occured',error.message);
                 return;
             }
 
-            setData(data);
+            setData(data && data.length > 0 ? data[0] : null);
             setLoading(false);
         }catch(err){
             console.error('Unexpected Error Occured',err);

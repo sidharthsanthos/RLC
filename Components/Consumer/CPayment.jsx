@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native'
+import { Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, KeyboardAvoidingView } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
 import { supabase } from '../../utils/supabase';
@@ -137,7 +137,17 @@ const CPayment = () => {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+            <ScrollView 
+                style={styles.container}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
 
         {/* Header */}
         <View style={styles.header}>
@@ -243,7 +253,8 @@ const CPayment = () => {
 
         </View>
 
-    </ScrollView>
+            </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
 
@@ -251,9 +262,12 @@ export default CPayment
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    padding: 16,
+    flex: 1,
     backgroundColor: "#f5f7fa",
+  },
+  
+  scrollContent: {
+    padding: 16,
     paddingTop:Platform.OS==='android'?StatusBar.currentHeight + 10: 20
   },
   header: {

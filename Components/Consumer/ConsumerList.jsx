@@ -7,6 +7,7 @@ import EditConsumer from './EditConsumer';
 import OrderDetails from './OrderDetails';
 import EditOrder from './EditOrder';
 import AddOrder from './AddOrder';
+import AddOrderNew from './COrder';
 import AddPayment from './AddPayment';
 import PendingConsumers from '../ConsumerDashboard/PendingConsumers';
 import ConsumerDashboard from './ConsumerDashboard';
@@ -20,7 +21,7 @@ const ConsumerList = () => {
       <Stack.Screen name='Dashboard' component={ConsumerDashboard} />
       <Stack.Screen name='ConsumerMain' component={CMain} />
       <Stack.Screen name='ConsumerDetails' component={ConsumerDetails} />
-      <Stack.Screen name='ConsumerOrder' component={AddOrder} />
+      <Stack.Screen name='ConsumerOrder' component={AddOrderNew} />
       <Stack.Screen name='ConsumerPayment' component={CPayment} />
       <Stack.Screen name='EditConsumer' component={EditConsumer} />
       <Stack.Screen name='OrderDetails' component={OrderDetails} />

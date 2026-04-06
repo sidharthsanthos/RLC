@@ -1,4 +1,4 @@
-import {useEffect} from 'react';
+import { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,8 @@ import ConsumerList from './ConsumerList';
 import Reports from './Reports';
 import AddOrder from './AddOrder';
 import AddPayment from './AddPayment';
+import SOrder from '../Supplier/SOrder';
+import AddOrderNew from './COrder';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -18,11 +20,11 @@ const ReportsStack = () => (
   </Stack.Navigator>
 );
 
-function BackToScreen({navigation}){
-  const isFocused=useIsFocused();
+function BackToScreen({ navigation }) {
+  const isFocused = useIsFocused();
 
   useEffect(() => {
-    if(isFocused && navigation){
+    if (isFocused && navigation) {
       const timer = setTimeout(() => {
         navigation.navigate('Index');
       }, 100);
@@ -46,9 +48,9 @@ export default function ConsumerTabs() {
         name='HomeRedirect'
         component={BackToScreen}
         options={{
-          tabBarLabel:"Home",
-          tabBarIcon:({color,size})=>(
-            <Ionicons name='arrow-back-circle-outline' size={size} color={color}/>
+          tabBarLabel: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name='arrow-back-circle-outline' size={size} color={color} />
           )
         }}
       />
@@ -65,10 +67,10 @@ export default function ConsumerTabs() {
           unmountOnBlur: true
         }}
       />
-      
-      <Tab.Screen 
+
+      <Tab.Screen
         name='AddOrder'
-        component={AddOrder}
+        component={AddOrderNew}
         options={{
           tabBarLabel: 'Add Order',
           tabBarIcon: ({ color, size }) => (

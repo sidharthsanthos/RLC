@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import SupplierList from './SupplierList';
 import SupplierReports from './SupplierReports';
+import SOrder from './SOrder';
 import { useIsFocused } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator();
@@ -60,6 +61,18 @@ export default function SupplierTabs() {
           tabBarLabel: "Suppliers",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-outline" size={size} color={color} />
+          ),
+          unmountOnBlur: true
+        }}
+      />
+
+      <Tab.Screen
+        name="AddOrder"
+        component={SOrder}
+        options={{
+          tabBarLabel: "Add Order",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="cart-outline" size={size} color={color} />
           ),
           unmountOnBlur: true
         }}

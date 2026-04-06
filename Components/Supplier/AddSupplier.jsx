@@ -1,4 +1,4 @@
-import { Platform, StatusBar, StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native'
+import { Platform, StatusBar, StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView } from 'react-native'
 import React, { useState } from 'react'
 import { Picker } from '@react-native-picker/picker'   // Must install this
 import { supabase } from '../../utils/supabase';
@@ -12,6 +12,7 @@ const AddSupplier = () => {
   const [state, setState] = useState('');
   const [address, setAddress] = useState('');
   const [supplyType, setSupplyType] = useState(1);
+  const [bagWeight, setBagWeight] = useState('');
   const [alert,setAlert]=useState({type:'',message:''});
 
   const southStates = [
@@ -54,7 +55,8 @@ const AddSupplier = () => {
           Contact:contact,
           State:state,
           Address:address,
-          Supply_Type:supplyType
+          Supply_Type:supplyType,
+          Bag_Weight:bagWeight ? Number(bagWeight) : null
         })
 
       if(error){
@@ -78,6 +80,7 @@ const AddSupplier = () => {
       setAddress('')
       setState('')
       setSupplyType(1)
+      setBagWeight('')
       
     }catch(err){
       console.error('Unexpected Error Occured',err);
@@ -86,7 +89,11 @@ const AddSupplier = () => {
 
   return (
     
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {alert.message !=="" && (
         <MessageBox type={alert.type} message={alert.message}/>
       )}
@@ -156,23 +163,37 @@ const AddSupplier = () => {
         </Picker>
       </View>
 
+      {/* Bag Weight */}
+      <Text style={styles.label}>Bag Weight (kg)</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Bag Weight in kg"
+        keyboardType="numeric"
+        value={bagWeight}
+        onChangeText={setBagWeight}
+      />
+
       {/* Submit Button */}
       <TouchableOpacity style={styles.button} onPress={()=>AddSupplier()}>
         <Text style={styles.buttonText}>Add Supplier</Text>
       </TouchableOpacity>
 
-    </View>
+    </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
 export default AddSupplier;
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  container: {
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0+50,
     paddingHorizontal: 20,
-    backgroundColor: '#fff'
+    paddingBottom: 40,
   },
   heading: {
     fontSize: 24,

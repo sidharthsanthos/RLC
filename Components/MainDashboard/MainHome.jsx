@@ -4,14 +4,16 @@ import InventoryTrendCard from './InventoryTrendCard'
 import SupplierConsumerRow from './SupplierConsumerRow'
 import CollectionsCard from './CollectionsCard'
 import PendingSummary from './PendingSummary'
+import DailyRateCard from './DailyRate'
 
 const MainHome = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <PendingSummary/>
-      <InventoryTrendCard/>
-      <SupplierConsumerRow/>
-      <CollectionsCard/>
+      <DailyRateCard />
+      <PendingSummary />
+      <InventoryTrendCard />
+      <SupplierConsumerRow />
+      <CollectionsCard />
     </ScrollView>
   )
 }

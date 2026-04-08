@@ -21,6 +21,7 @@ const SOrder = () => {
     const [selectedSupplier, setSelectedSupplier] = useState(routeSupplier);
 
     const [orderData, setOrderData] = useState({
+        stockName: 'Lemon',
         quantity: 0,
         quality: '',
         netAmount: 0,
@@ -121,6 +122,7 @@ const SOrder = () => {
                     Supplier_ID: selectedSupplier?.id,
                     Date: orderDate,
                     Stock_Type: 'in-stock',
+                    Stock_Name: orderData.stockName,
                     Quality: orderData.quality,
                     Unit_Type: selectedSupplier?.Supply_Type,
                     Net_Quantity: orderData.quantity,
@@ -157,7 +159,7 @@ const SOrder = () => {
             setAlert({ type: 'success', message: 'Order Added Successfully' });
             setTimeout(() => {
                 setAlert({ type: '', message: '' });
-                setOrderData({ quantity: 0, quality: '', netAmount: 0, totalAmount: 0, totalBags: 0, notes: '' });
+                setOrderData({ stockName: 'Lemon', quantity: 0, quality: '', netAmount: 0, totalAmount: 0, totalBags: 0, notes: '' });
                 if (routeSupplier) {
                     navigation.navigate('SupplierDetails', { supplierID: selectedSupplier?.id });
                 } else {
@@ -254,6 +256,15 @@ const SOrder = () => {
                         }}
                     />
                 )}
+
+                {/* STOCK NAME */}
+                <Text style={styles.label}>Stock Name</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder='Stock Name'
+                    value={orderData.stockName}
+                    onChangeText={(v) => handleInput('stockName', v)}
+                />
 
                 {/* QUALITY */}
                 <Text style={styles.label}>Quality</Text>

@@ -16,3 +16,6 @@
 
 errors or bugs to fix
 date in us format
+
+
+in the consumerDetails.jsx file it is just showing total amount in the modal and the next modal in file ConsumerPaymentReceipt is also showing basic money details while i want it to display Stock_Name,Quantity_Allocated,net 

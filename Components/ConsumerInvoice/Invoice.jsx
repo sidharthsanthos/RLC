@@ -53,24 +53,13 @@ const generateTaxInvoiceHTML = ({
   date,
   customerName,
   customerContact,
-  items,
+  paymentMode,
   totalAmount,
   received,
   balance,
 }) => {
-  const itemRows = items.map((item, i) => `
-    <tr>
-      <td style="text-align:center;">${i + 1}</td>
-      <td>${item.name || item.Stock_ID || '-'}</td>
-      <td></td>
-      <td style="text-align:center;">${item.Quantity_Allocated || item.quantity || ''}</td>
-      <td style="text-align:center;">${item.unit || 'Kg'}</td>
-      <td style="text-align:right;">₹ ${item.pricePerUnit ? item.pricePerUnit.toFixed(2) : ((item.Amount && item.Quantity_Allocated) ? (item.Amount / item.Quantity_Allocated).toFixed(2) : '0.00')}</td>
-      <td style="text-align:right;">${item.Amount ? item.Amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}</td>
-    </tr>
-  `).join('');
-
-  const totalQty = items.reduce((s, it) => s + (it.Quantity_Allocated || it.quantity || 0), 0);
+  // Payment receipt — single row: Particulars | Mode | Amount
+  const modeDisplay = paymentMode ? paymentMode.toUpperCase() : 'N/A';
 
   return `
   <!DOCTYPE html>
@@ -140,28 +129,27 @@ const generateTaxInvoiceHTML = ({
           </div>
         </div>
 
-        <!-- Items Table -->
+        <!-- Payment Table -->
         <table class="items">
           <thead>
             <tr>
               <th style="width:30px;">#</th>
-              <th>Item Name</th>
-              <th style="width:70px;">HSN/ SAC</th>
-              <th style="width:70px;">Quantity</th>
-              <th style="width:50px;">Unit</th>
-              <th style="width:90px;">Price/ Unit (₹)</th>
-              <th style="width:90px;">Amount(₹)</th>
+              <th style="text-align:left;">Particulars</th>
+              <th style="width:130px;">Payment Mode</th>
+              <th style="width:130px;">Amount (₹)</th>
             </tr>
           </thead>
           <tbody>
-            ${itemRows}
+            <tr>
+              <td style="text-align:center;">1</td>
+              <td style="text-align:left;">Payment to Account</td>
+              <td style="text-align:center;">${modeDisplay}</td>
+              <td style="text-align:right;">₹ ${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            </tr>
             <!-- Total row -->
             <tr>
               <td></td>
               <td style="font-weight:bold;">Total</td>
-              <td></td>
-              <td style="text-align:center; font-weight:bold;">${totalQty}</td>
-              <td></td>
               <td></td>
               <td style="text-align:right; font-weight:bold;">₹ ${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
             </tr>
@@ -171,32 +159,21 @@ const generateTaxInvoiceHTML = ({
         <!-- Totals / Summary -->
         <table class="totals" style="margin-top:0;">
           <tr>
-            <td rowspan="5" style="width:55%; vertical-align:top;">&nbsp;</td>
-            <td class="label">Sub Total</td>
-            <td style="text-align:center;">:</td>
-            <td style="text-align:right;">₹ ${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-          </tr>
-          <tr>
+            <td rowspan="4" style="width:55%; vertical-align:top;">&nbsp;</td>
             <td class="label">Total</td>
             <td style="text-align:center;">:</td>
             <td style="text-align:right; font-weight:bold;">₹ ${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
           </tr>
           <tr>
-            <td colspan="3" class="label">Invoice Amount In Words :</td>
+            <td colspan="3" class="label">Amount In Words :</td>
           </tr>
           <tr>
             <td colspan="3">${numberToWords(totalAmount)}</td>
           </tr>
           <tr>
-            <td>Received</td>
+            <td class="label">Balance</td>
             <td style="text-align:center;">:</td>
-            <td style="text-align:right;">₹ ${received.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-          </tr>
-          <tr>
-            <td style="width:55%;"></td>
-            <td>Balance</td>
-            <td style="text-align:center;">:</td>
-            <td style="text-align:right;">₹ ${balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td style="text-align:right; font-weight:bold;">₹ ${balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
           </tr>
         </table>
 
@@ -225,21 +202,21 @@ const Invoice = ({ consumer, transaction, orderDetails, onClose }) => {
 
   const totalAmount = transaction.amount || 0;
   const received = 0;
-  const balance = totalAmount - received;
+  const balance = consumer?.Pending_Amount || 0;
 
   // PDF download using Tax Invoice format
   const downloadInvoice = async () => {
     try {
       const html = generateTaxInvoiceHTML({
-        businessName: consumer?.Name || 'N/A',
+        businessName: 'RLC',
         businessEmail: consumer?.Email || '',
-        businessContact: consumer?.Contact || consumer?.Phone_Number || 'N/A',
-        businessAddress: consumer?.Address || '',
+        businessContact: '95381 12212',
+        businessAddress: 'Stall No.174,Ernakulam Market, Cochin,PIN: 682 035.',
         invoiceNo: `${transaction.id}`,
         date: formatDate(transaction.date),
-        customerName: 'GUEST',
-        customerContact: 'N/A',
-        items: orderDetails || [],
+        customerName: consumer?.Name,
+        customerContact: consumer?.Contact || consumer?.Phone_Number || 'N/A',
+        paymentMode: transaction.mode || '',
         totalAmount,
         received,
         balance,
@@ -299,39 +276,19 @@ const Invoice = ({ consumer, transaction, orderDetails, onClose }) => {
             </View>
           </View>
 
-          {/* Order Details */}
-          {orderDetails && orderDetails.length > 0 && (
-            <View style={styles.orderSection}>
-              <Text style={styles.sectionTitle}>Order Details</Text>
-              <View style={styles.divider} />
-              {orderDetails.map((order, index) => (
-                <View key={index} style={styles.orderItem}>
-                  <View style={styles.orderRow}>
-                    <Text style={styles.orderLabel}>Stock ID:</Text>
-                    <Text style={styles.orderValue}>{order.Stock_ID}</Text>
-                  </View>
-                  <View style={styles.orderRow}>
-                    <Text style={styles.orderLabel}>Quantity:</Text>
-                    <Text style={styles.orderValue}>{order.Quantity_Allocated} units</Text>
-                  </View>
-                  <View style={styles.orderRow}>
-                    <Text style={styles.orderLabel}>Bags:</Text>
-                    <Text style={styles.orderValue}>{order.Bags_Allocated}</Text>
-                  </View>
-                  <View style={styles.orderRow}>
-                    <Text style={styles.orderLabel}>Amount:</Text>
-                    <Text style={styles.orderValue}>₹{order.Amount?.toLocaleString()}</Text>
-                  </View>
-                  {index < orderDetails.length - 1 && <View style={styles.itemDivider} />}
-                </View>
-              ))}
-            </View>
-          )}
-
           {/* Payment Details */}
           <View style={styles.paymentSection}>
             <Text style={styles.sectionTitle}>Payment Summary</Text>
             <View style={styles.divider} />
+
+            <View style={styles.orderRow}>
+              <Text style={styles.orderLabel}>Particulars</Text>
+              <Text style={styles.orderValue}>Payment to Account</Text>
+            </View>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderLabel}>Payment Mode</Text>
+              <Text style={styles.orderValue}>{transaction.mode ? transaction.mode.toUpperCase() : 'N/A'}</Text>
+            </View>
 
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total Amount Paid:</Text>

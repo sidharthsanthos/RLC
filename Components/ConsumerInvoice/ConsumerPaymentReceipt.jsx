@@ -43,12 +43,31 @@ const formatDate = (isoDate) => {
     return `${day}-${month}-${year}`;
 };
 
-// ─── Payment Receipt HTML Generator (for PDF only) ──────────────────────
+// ─── Sale Receipt HTML Generator (for PDF only) ──────────────────────
 const generatePaymentReceiptHTML = ({
     consumer,
     transaction,
+    allocations,
 }) => {
     const amount = transaction.amount || 0;
+    const netRate = transaction.net_rate ?? '';
+    const totalQty = allocations.reduce((sum, a) => sum + (Number(a.Quantity_Allocated) || 0), 0);
+
+    // Group by Stock_Name and sum quantities
+    const stockMap = {};
+    allocations.forEach(a => {
+        const name = a.Stock?.Stock_Name || 'Stock';
+        stockMap[name] = (stockMap[name] || 0) + Number(a.Quantity_Allocated || 0);
+    });
+    const stockRows = Object.entries(stockMap)
+        .map(([name, qty], i) => `
+            <tr>
+              <td style="text-align: center;">${i + 1}</td>
+              <td style="text-align: left;">${name}</td>
+              <td style="text-align: center;">${qty} kg</td>
+              <td style="text-align: center;">₹${netRate}</td>
+              <td style="text-align: right;">₹${(qty * Number(netRate)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            </tr>`).join('');
 
     return `
   <!DOCTYPE html>
@@ -65,20 +84,15 @@ const generatePaymentReceiptHTML = ({
         .subtitle { background-color: #1a6b27; color: white; display: inline-block; padding: 4px 10px; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
         .address { font-size: 13px; font-weight: bold; font-style: italic; color: #1a6b27; line-height: 1.4; }
         .header-right { flex: 1; text-align: right; font-size: 13px; font-weight: bold; color: #1a6b27; line-height: 1.6; }
-        
         .receipt-title { text-align: center; color: #1a6b27; font-size: 20px; font-weight: bold; text-decoration: underline; margin-bottom: 15px; }
-
         .meta-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 20px; }
         .meta-client { font-size: 16px; font-weight: bold; text-transform: uppercase; }
-        
         table.items { width: 100%; border-collapse: collapse; margin-bottom: 30px; text-align: right; font-size: 14px; }
         table.items th, table.items td { border: 1px solid #1a6b27; padding: 12px; }
         table.items th { background-color: #1a6b27; color: white; text-align: center; font-weight: bold; }
         table.items td { color: #000; }
-        
         .amount-words-row td { text-align: left; font-weight: bold; font-style: italic; color: #1a6b27; padding: 15px 12px; }
         .net-amount-row td { font-weight: bold; color: #cc0000; padding: 15px 12px; }
-        
         .sig-box { display: flex; justify-content: flex-end; margin-top: 40px; margin-right: 20px; }
         .sig-content { text-align: center; color: #1a6b27; font-weight: bold; }
         .sig-line { width: 150px; border-bottom: 1px solid #1a6b27; margin-bottom: 5px; }
@@ -88,21 +102,19 @@ const generatePaymentReceiptHTML = ({
       <div class="container">
         <div class="header">
           <div class="header-left">
-            <div class="title">sidharth santhosh</div>
-            <div class="subtitle">Vegetables Wholesale & Commission Agent</div>
-            <div class="address">Opp. SDPY School Play Ground,<br/>Near HDFC Bank, Palluruthy, Kochin - 6.</div>
+            <div class="title">RLC</div>
+            <div class="subtitle">Lemon Wholesale &amp; Commission Agent</div>
+            <div class="address">Stall No.174,<br/>Ernakulam Market, Cochin,PIN: 682 035.</div>
           </div>
           <div class="header-right">
-            99958 67008<br/>
-            95670 27008<br/>
-            0484 - 2964008
+            Phone: 95381 12212<br/>
           </div>
         </div>
         
-        <div class="receipt-title">PAYMENT RECEIPT</div>
+        <div class="receipt-title">SALE RECEIPT</div>
 
         <div class="meta-row">
-          <div class="meta-client">Received From: <br/>${consumer?.Name || 'CONSUMER'}</div>
+          <div class="meta-client">Customer: <br/>${consumer?.Name || 'CONSUMER'}</div>
           <div style="text-align: right;">
             Receipt No &nbsp;: &nbsp;&nbsp; ${transaction.id}<br/>
             Date &nbsp;: &nbsp;&nbsp; ${formatDate(transaction.date)}
@@ -112,24 +124,21 @@ const generatePaymentReceiptHTML = ({
         <table class="items">
           <thead>
             <tr>
-              <th style="width: 50px;">S.No</th>
-              <th style="text-align: left;">Particulars</th>
-              <th style="text-align: center;">Payment Mode</th>
-              <th style="text-align: right;">Amount(₹)</th>
+              <th style="width: 40px;">S.No</th>
+              <th style="text-align: left;">Stock Name</th>
+              <th style="text-align: center;">Quantity (kg)</th>
+              <th style="text-align: center;">Rate (₹/kg)</th>
+              <th style="text-align: right;">Amount (₹)</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style="text-align: center;">1</td>
-              <td style="text-align: left;">Payment towards account</td>
-              <td style="text-align: center;">${transaction.mode ? transaction.mode.toUpperCase() : 'CASH'}</td>
-              <td style="text-align: right;">${amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-            </tr>
+            ${stockRows}
             <tr class="amount-words-row">
-              <td colspan="4">Amount in Words: ${numberToWords(amount)}</td>
+              <td colspan="5">Amount in Words: ${numberToWords(amount)}</td>
             </tr>
             <tr class="net-amount-row">
-              <td colspan="3" style="text-align: right; border-right: none;">Total Amount Received</td>
+              <td colspan="2" style="text-align: left;">Total Qty: ${totalQty} kg</td>
+              <td colspan="2" style="text-align: right; border-right: none;">Total Amount</td>
               <td style="text-align: right; border-left: none;">₹ ${amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
             </tr>
           </tbody>
@@ -148,9 +157,19 @@ const generatePaymentReceiptHTML = ({
 };
 
 // ─── Main Payment Receipt Component ───────────────────────────────────────────
-const ConsumerPaymentReceipt = ({ consumer, transaction, onClose }) => {
+const ConsumerPaymentReceipt = ({ consumer, transaction, allocations = [], onClose }) => {
     const viewShotRef = useRef();
     const totalAmount = transaction.amount || 0;
+    const netRate = transaction.net_rate ?? null;
+
+    // Group allocations by Stock_Name
+    const stockMap = {};
+    allocations.forEach(a => {
+        const name = a.Stock?.Stock_Name || 'Stock';
+        stockMap[name] = (stockMap[name] || 0) + Number(a.Quantity_Allocated || 0);
+    });
+    const stockRows = Object.entries(stockMap);
+    const totalQty = stockRows.reduce((sum, [, qty]) => sum + qty, 0);
 
     // PDF download using Green Receipt format
     const downloadReceipt = async () => {
@@ -158,6 +177,7 @@ const ConsumerPaymentReceipt = ({ consumer, transaction, onClose }) => {
             const html = generatePaymentReceiptHTML({
                 consumer,
                 transaction,
+                allocations,
             });
 
             const { uri } = await Print.printToFileAsync({
@@ -165,7 +185,7 @@ const ConsumerPaymentReceipt = ({ consumer, transaction, onClose }) => {
                 base64: false,
             });
 
-            const fileName = `Payment_Receipt_${transaction.id}.pdf`;
+            const fileName = `Sale_Receipt_${transaction.id}.pdf`;
             const destination = FileSystem.documentDirectory + fileName;
 
             await FileSystem.moveAsync({
@@ -176,7 +196,7 @@ const ConsumerPaymentReceipt = ({ consumer, transaction, onClose }) => {
             await Sharing.shareAsync(destination);
         } catch (error) {
             console.error('PDF generation failed:', error);
-            Alert.alert('Error', 'Failed to generate Payment Receipt PDF');
+            Alert.alert('Error', 'Failed to generate Sale Receipt PDF');
         }
     };
 
@@ -205,13 +225,34 @@ const ConsumerPaymentReceipt = ({ consumer, transaction, onClose }) => {
                         </View>
                     </View>
 
-                    {/* Payment Details */}
+                    {/* Stock + Rate Details */}
                     <View style={styles.paymentSection}>
-                        <Text style={styles.sectionTitle}>Payment Summary</Text>
+                        <Text style={styles.sectionTitle}>Sale Summary</Text>
                         <View style={styles.divider} />
 
+                        {/* Stock rows */}
+                        {stockRows.length > 0 && (
+                            <View style={styles.stockTable}>
+                                <View style={styles.stockHeaderRow}>
+                                    <Text style={[styles.stockCell, styles.stockHeader, { flex: 2 }]}>Stock</Text>
+                                    <Text style={[styles.stockCell, styles.stockHeader]}>Qty (kg)</Text>
+                                    <Text style={[styles.stockCell, styles.stockHeader]}>Rate</Text>
+                                    <Text style={[styles.stockCell, styles.stockHeader]}>Amount</Text>
+                                </View>
+                                {stockRows.map(([name, qty], i) => (
+                                    <View key={i} style={styles.stockDataRow}>
+                                        <Text style={[styles.stockCell, { flex: 2 }]}>{name}</Text>
+                                        <Text style={styles.stockCell}>{qty}</Text>
+                                        <Text style={styles.stockCell}>₹{netRate ?? '-'}</Text>
+                                        <Text style={styles.stockCell}>₹{netRate ? (qty * netRate).toLocaleString() : '-'}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+
+                        {/* Total row */}
                         <View style={styles.totalRow}>
-                            <Text style={styles.totalLabel}>Total Amount Received:</Text>
+                            <Text style={styles.totalLabel}>Total ({totalQty} kg):</Text>
                             <Text style={styles.totalAmount}>₹{totalAmount.toLocaleString()}</Text>
                         </View>
 
@@ -420,5 +461,36 @@ const styles = StyleSheet.create({
         color: '#666',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    stockTable: {
+        borderWidth: 1,
+        borderColor: '#1a6b27',
+        borderRadius: 6,
+        overflow: 'hidden',
+        marginBottom: 12,
+    },
+    stockHeaderRow: {
+        flexDirection: 'row',
+        backgroundColor: '#1a6b27',
+        paddingVertical: 8,
+        paddingHorizontal: 6,
+    },
+    stockDataRow: {
+        flexDirection: 'row',
+        paddingVertical: 8,
+        paddingHorizontal: 6,
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
+    },
+    stockCell: {
+        flex: 1,
+        fontSize: 13,
+        color: '#333',
+        textAlign: 'center',
+    },
+    stockHeader: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 12,
     },
 });

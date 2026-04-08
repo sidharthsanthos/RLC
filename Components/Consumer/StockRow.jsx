@@ -29,7 +29,7 @@ const StockRow = ({
                         <Picker.Item
                             key={item.id}
                             value={item.id}
-                            label={`${item.Suppliers?.Name || 'Supplier'} | ${item.Quality} | ${item.Remaining_Quantity}kg`}
+                            label={`${item.Stock_Name ? item.Stock_Name + ' | ' : ''}${item.Suppliers?.Name || 'Supplier'} | ${item.Quality} | ${item.Remaining_Quantity}kg`}
                         />
                     ))}
                 </Picker>

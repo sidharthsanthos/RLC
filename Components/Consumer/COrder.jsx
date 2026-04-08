@@ -36,10 +36,18 @@ const AddOrderNew = () => {
     };
 
     const fetchStock = async () => {
+        const todayDate = new Date();
+        const today = todayDate.toISOString().split('T')[0];
+
+        const yesterdayDate = new Date(todayDate);
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yesterday = yesterdayDate.toISOString().split('T')[0];
+
         const { data } = await supabase
             .from('Stock')
             .select('*, Suppliers(Name)')
             .gt('Remaining_Quantity', 0)
+            .in('Date', [today, yesterday])
             .order('Date', { ascending: false });
 
         setStockList(data || []);
@@ -134,6 +142,7 @@ const AddOrderNew = () => {
                     transaction_type: 'debit',
                     mode: null,
                     date: today,
+                    net_rate: Number(rate),
                     remarks: `Order: ${totalQty}kg @ ₹${rate}`
                 })
                 .select()
